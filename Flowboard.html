@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Flowboard — task management prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script>
+// Tweakable defaults (persisted via host on edit)
+window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
+  "accent": "#141413",
+  "density": "comfortable",
+  "bg": "dark"
+}/*EDITMODE-END*/;
+</script>
+
+<style>
+  :root{
+    --accent: #5B5BF5;
+    --accent-ink: #ffffff;
+    --accent-tint: color-mix(in oklab, var(--accent) 14%, white);
+    --accent-soft: color-mix(in oklab, var(--accent) 8%, white);
+
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --surface-2: #F4F3EE;
+    --line: #E7E5DF;
+    --line-strong: #D6D3CB;
+
+    --ink: #141413;
+    --ink-2: #3A3A36;
+    --ink-3: #6B6A63;
+    --ink-4: #9A988F;
+
+    --ok: oklch(62% 0.13 150);
+    --warn: oklch(70% 0.14 75);
+    --err: oklch(60% 0.19 25);
+
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+
+    --shadow-sm: 0 1px 0 rgba(20,20,19,.04), 0 1px 2px rgba(20,20,19,.05);
+    --shadow-md: 0 1px 0 rgba(20,20,19,.04), 0 6px 20px -6px rgba(20,20,19,.12);
+    --shadow-lg: 0 2px 0 rgba(20,20,19,.04), 0 24px 60px -20px rgba(20,20,19,.18);
+
+    --col-gap: 14px;
+    --card-pad: 12px;
+    --card-gap: 8px;
+
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+
+  :root[data-density="compact"]{
+    --col-gap: 10px;
+    --card-pad: 9px;
+    --card-gap: 6px;
+  }
+
+  :root[data-bg="cool"]{
+    --bg: #F5F6F9;
+    --surface: #FFFFFF;
+    --surface-2: #EDEEF2;
+    --line: #E3E5EB;
+    --line-strong: #CFD2DB;
+  }
+  :root[data-bg="dark"]{
+    --bg: #141416;
+    --surface: #1C1D20;
+    --surface-2: #24262A;
+    --line: #2E3035;
+    --line-strong: #3C3F45;
+    --ink: #F2F2EF;
+    --ink-2: #D5D5D0;
+    --ink-3: #9A9A94;
+    --ink-4: #6B6B66;
+    --shadow-md: 0 1px 0 rgba(0,0,0,.4), 0 10px 30px -10px rgba(0,0,0,.6);
+    --shadow-lg: 0 1px 0 rgba(0,0,0,.4), 0 30px 60px -20px rgba(0,0,0,.7);
+  }
+
+  *,*::before,*::after{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 14px; -webkit-font-smoothing: antialiased; }
+  button{ font: inherit; color: inherit; }
+  input, textarea, select{ font: inherit; color: inherit; }
+  ::selection{ background: var(--accent); color: var(--accent-ink); }
+
+  /* Utility */
+  .mono{ font-family: var(--font-mono); font-feature-settings: "ss01"; letter-spacing: -0.01em; }
+  .kbd{
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);
+    padding: 2px 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px;
+    border-radius: 5px; background: var(--surface); line-height: 1;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{ height: 10px; width: 10px; }
+  ::-webkit-scrollbar-thumb{ background: var(--line-strong); border-radius: 20px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-track{ background: transparent; }
+
+  /* Drag ghost suppression */
+  .dragging{ opacity: .25; }
+  .drop-target{ background: var(--accent-soft) !important; outline: 2px dashed var(--accent) !important; outline-offset: -4px; }
+
+  /* Tweaks panel */
+  .tweaks{
+    position: fixed; right: 16px; bottom: 16px; z-index: 200;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow-lg); padding: 14px 14px 12px; width: 260px;
+    font-size: 13px;
+  }
+  .tweaks h4{ margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .tweaks .row{ display:flex; gap:6px; margin-bottom: 10px; align-items: center; }
+  .tweaks .swatch{ width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line); cursor: pointer; padding: 0; }
+  .tweaks .swatch.active{ outline: 2px solid var(--ink); outline-offset: 2px; }
+  .tweaks .seg{ display: inline-flex; background: var(--surface-2); border-radius: 8px; padding: 2px; }
+  .tweaks .seg button{ border: 0; background: transparent; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--ink-3); }
+  .tweaks .seg button.active{ background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+  .tweaks label{ font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 5px; }
+
+  /* Focus ring */
+  :is(button, input, textarea, a, [tabindex]):focus-visible{
+    outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px;
+  }
+
+  #app{ min-height: 100vh; }
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#FAFAF7"/>
+      <rect x="22" y="30" width="14" height="40" rx="3" fill="#5B5BF5"/>
+      <rect x="43" y="30" width="14" height="28" rx="3" fill="#141413"/>
+      <rect x="64" y="30" width="14" height="18" rx="3" fill="#D6D3CB"/>
+    </svg>
+  </template>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="./src/icons.jsx"></script>
+  <script type="text/babel" src="./src/store.jsx"></script>
+  <script type="text/babel" src="./src/shared.jsx"></script>
+  <script type="text/babel" src="./src/auth.jsx"></script>
+  <script type="text/babel" src="./src/dashboard.jsx"></script>
+  <script type="text/babel" src="./src/board.jsx"></script>
+  <script type="text/babel" src="./src/card_modal.jsx"></script>
+  <script type="text/babel" src="./src/settings.jsx"></script>
+  <script type="text/babel" src="./src/list_view.jsx"></script>
+  <script type="text/babel" src="./src/tweaks.jsx"></script>
+  <script type="text/babel" src="./src/app_shell.jsx"></script>
+  <script type="text/babel" src="./src/cmdk.jsx"></script>
+  <script type="text/babel" src="./src/app.jsx"></script>
+</body>
+</html>

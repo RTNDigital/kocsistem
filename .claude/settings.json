@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(psql --version)",
+      "Bash(node neon/run-schema.mjs)",
+      "Bash(node neon/check-tables.mjs)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\deniz\\Desktop\\kocsistem\\flowboard\\app\\api\\auth"
+    ]
+  }
+}
