@@ -68,16 +68,25 @@ export function useUpdateCard(boardId: string) {
     }) => updateCard(cardId, patch),
     onMutate: async ({ cardId, patch }) => {
       await qc.cancelQueries({ queryKey: key(boardId) });
+      await qc.cancelQueries({ queryKey: ["card", cardId] });
+      
       const prev = qc.getQueryData<BoardDetail>(key(boardId));
       qc.setQueryData<BoardDetail>(key(boardId), (old) =>
         old
           ? { ...old, cards: old.cards.map((c) => (c.id === cardId ? { ...c, ...patch } : c)) }
           : old
       );
-      return { prev };
+
+      const prevCard = qc.getQueryData<any>(["card", cardId]);
+      if (prevCard) {
+        qc.setQueryData(["card", cardId], { ...prevCard, ...patch });
+      }
+
+      return { prev, prevCard };
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(key(boardId), ctx.prev);
+      if (ctx?.prevCard) qc.setQueryData(["card", _v.cardId], ctx.prevCard);
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: key(boardId) });
@@ -113,33 +122,40 @@ export function useMoveCard(boardId: string) {
       toColumnId: string;
       toIndex: number;
       actorId?: string;
+      fromColumnId?: string;
+      siblingsExcludingMoved?: string[];
     }) => {
-      const detail = qc.getQueryData<BoardDetail>(key(boardId));
-      if (!detail) throw new Error("Board not loaded");
-      const card = detail.cards.find((c) => c.id === args.cardId);
-      if (!card) throw new Error("Card not found");
-
-      const siblingsExcludingMoved = detail.cards
-        .filter((c) => c.column_id === args.toColumnId && c.id !== args.cardId)
-        .sort((a, b) => a.position.localeCompare(b.position))
-        .map((c) => c.position);
-
       return moveCard({
         cardId: args.cardId,
         boardId,
-        fromColumnId: card.column_id,
+        fromColumnId: args.fromColumnId ?? args.toColumnId, // Fallback if missing
         toColumnId: args.toColumnId,
-        siblingsExcludingMoved,
+        siblingsExcludingMoved: args.siblingsExcludingMoved ?? [],
         toIndex: args.toIndex,
       });
     },
     onMutate: async (args) => {
       await qc.cancelQueries({ queryKey: key(boardId) });
+      await qc.cancelQueries({ queryKey: ["card", args.cardId] });
+      
       const prev = qc.getQueryData<BoardDetail>(key(boardId));
-      if (!prev) return { prev };
+      const prevCard = qc.getQueryData<any>(["card", args.cardId]);
+
+      if (prev) {
+        const card = prev.cards.find((c) => c.id === args.cardId);
+        if (card) {
+          args.fromColumnId = card.column_id;
+        }
+        args.siblingsExcludingMoved = prev.cards
+          .filter((c) => c.column_id === args.toColumnId && c.id !== args.cardId)
+          .sort((a, b) => a.position.localeCompare(b.position))
+          .map((c) => c.position);
+      }
+
+      if (!prev) return { prev, prevCard };
 
       const card = prev.cards.find((c) => c.id === args.cardId);
-      if (!card) return { prev };
+      if (!card) return { prev, prevCard };
 
       const siblings = prev.cards
         .filter((c) => c.column_id === args.toColumnId && c.id !== args.cardId)
@@ -162,14 +178,25 @@ export function useMoveCard(boardId: string) {
         ),
       };
       qc.setQueryData(key(boardId), next);
-      return { prev };
+
+      if (prevCard) {
+        qc.setQueryData(["card", args.cardId], {
+          ...prevCard,
+          column_id: args.toColumnId,
+          position: optimisticPos,
+        });
+      }
+
+      return { prev, prevCard };
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(key(boardId), ctx.prev);
+      if (ctx?.prevCard) qc.setQueryData(["card", _v.cardId], ctx.prevCard);
     },
-    onSettled: () => {
+    onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: key(boardId) });
       qc.invalidateQueries({ queryKey: ["activity"] });
+      qc.invalidateQueries({ queryKey: ["card", vars.cardId] });
     },
   });
 }

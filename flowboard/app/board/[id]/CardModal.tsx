@@ -736,6 +736,13 @@ function DueDateField({
         <input
           type="date"
           value={inputValue}
+          onClick={(e) => {
+            try {
+              if ('showPicker' in HTMLInputElement.prototype) {
+                e.currentTarget.showPicker();
+              }
+            } catch (err) {}
+          }}
           onChange={(e) =>
             onChange(e.target.value ? new Date(e.target.value).toISOString() : null)
           }
@@ -760,6 +767,7 @@ function DueDateField({
             color: "var(--ink-4)",
             cursor: "pointer",
             padding: 2,
+            zIndex: 10,
           }}
           aria-label="Clear date"
         >
