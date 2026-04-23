@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { getBoardDetail } from "@/lib/queries";
+import { getBoardDetail, getActiveSprint, listSprintArchives, getSprintArchiveDetail } from "@/lib/queries";
 import {
   addCard,
   addColumn,
@@ -21,6 +21,8 @@ import {
   addLabel,
   updateLabel,
   deleteLabel,
+  startSprint,
+  completeSprint,
 } from "@/lib/mutations";
 import type { BoardDetail, Card, Column } from "@/types/domain";
 import type { CardPriority } from "@/types/database";
@@ -433,3 +435,55 @@ export function useDeleteLabel(boardId: string) {
     onSettled: () => qc.invalidateQueries({ queryKey: key(boardId) }),
   });
 }
+
+// ----------------------------------------------------------------------------
+// Sprints
+// ----------------------------------------------------------------------------
+export function useActiveSprint(boardId: string) {
+  return useQuery({
+    queryKey: ["sprint", boardId],
+    queryFn: () => getActiveSprint(boardId),
+    enabled: !!boardId,
+  });
+}
+
+export function useStartSprint(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { title: string; goal?: string }) =>
+      startSprint({ boardId, ...args }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["sprint", boardId] });
+    },
+  });
+}
+
+export function useCompleteSprint(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sprintId: string) =>
+      completeSprint({ sprintId, boardId }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["sprint", boardId] });
+      qc.invalidateQueries({ queryKey: key(boardId) });
+      qc.invalidateQueries({ queryKey: ["sprintArchives", boardId] });
+    },
+  });
+}
+
+export function useSprintArchives(boardId: string) {
+  return useQuery({
+    queryKey: ["sprintArchives", boardId],
+    queryFn: () => listSprintArchives(boardId),
+    enabled: !!boardId,
+  });
+}
+
+export function useSprintArchiveDetail(sprintId: string | null) {
+  return useQuery({
+    queryKey: ["sprintArchiveDetail", sprintId],
+    queryFn: () => getSprintArchiveDetail(sprintId!),
+    enabled: !!sprintId,
+  });
+}
+

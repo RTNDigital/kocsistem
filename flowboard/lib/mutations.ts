@@ -360,3 +360,115 @@ export async function deleteLabel(labelId: string) {
   await requireUser();
   await db`DELETE FROM labels WHERE id = ${labelId}`;
 }
+
+// ----------------------------------------------------------------------------
+// Sprints
+// ----------------------------------------------------------------------------
+export async function startSprint(args: {
+  boardId: string;
+  title: string;
+  goal?: string;
+}): Promise<string> {
+  await requireAdmin();
+
+  // Check no active sprint exists
+  const existing = await db`
+    SELECT id FROM sprints WHERE board_id = ${args.boardId} AND status = 'active' LIMIT 1
+  `;
+  if (existing.length > 0) throw new Error("A sprint is already active on this board");
+
+  // Get next sprint number
+  const countRows = await db`
+    SELECT COALESCE(MAX(sprint_number), 0) + 1 AS next_num FROM sprints WHERE board_id = ${args.boardId}
+  `;
+  const nextNum = Number(countRows[0].next_num);
+
+  const rows = await db`
+    INSERT INTO sprints (board_id, title, sprint_number, goal)
+    VALUES (${args.boardId}, ${args.title}, ${nextNum}, ${args.goal ?? ''})
+    RETURNING id
+  `;
+  return rows[0].id as string;
+}
+
+export async function completeSprint(args: {
+  sprintId: string;
+  boardId: string;
+}): Promise<number> {
+  await requireAdmin();
+
+  // Find the "Done" column (case-insensitive match)
+  const doneCols = await db`
+    SELECT id, title FROM columns
+    WHERE board_id = ${args.boardId}
+      AND LOWER(title) = 'done'
+  `;
+  if (doneCols.length === 0) throw new Error("No 'Done' column found");
+  const doneColId = doneCols[0].id as string;
+  const doneColTitle = doneCols[0].title as string;
+
+  // Get all cards in Done column with their denormalized data
+  const doneCards = await db`
+    SELECT c.*,
+      COALESCE(
+        (SELECT p.name FROM profiles p WHERE p.id = c.created_by), NULL
+      ) AS creator_name,
+      COALESCE(
+        ARRAY(
+          SELECT p.name FROM card_assignees ca JOIN profiles p ON p.id = ca.user_id WHERE ca.card_id = c.id
+        ), '{}'
+      ) AS assignee_names,
+      COALESCE(
+        ARRAY(
+          SELECT p.name FROM card_watchers cw JOIN profiles p ON p.id = cw.user_id WHERE cw.card_id = c.id
+        ), '{}'
+      ) AS watcher_names,
+      COALESCE(
+        ARRAY(
+          SELECT l.name FROM card_labels cl JOIN labels l ON l.id = cl.label_id WHERE cl.card_id = c.id
+        ), '{}'
+      ) AS label_names,
+      COALESCE(
+        ARRAY(
+          SELECT l.color FROM card_labels cl JOIN labels l ON l.id = cl.label_id WHERE cl.card_id = c.id
+        ), '{}'
+      ) AS label_colors,
+      (SELECT COUNT(*)::int FROM checklist_items ci WHERE ci.card_id = c.id) AS checklist_total,
+      (SELECT COUNT(*)::int FROM checklist_items ci WHERE ci.card_id = c.id AND ci.done = true) AS checklist_done_count,
+      (SELECT COUNT(*)::int FROM comments co WHERE co.card_id = c.id) AS comment_total
+    FROM cards c
+    WHERE c.column_id = ${doneColId} AND c.board_id = ${args.boardId}
+    ORDER BY c.position
+  `;
+
+  // Insert snapshot rows
+  for (const card of doneCards) {
+    await db`
+      INSERT INTO sprint_archived_cards (
+        sprint_id, board_id, card_title, card_description, card_priority,
+        card_due_at, column_title, created_by_name, assignee_names, watcher_names,
+        label_names, label_colors, checklist_total, checklist_done, comment_count
+      ) VALUES (
+        ${args.sprintId}, ${args.boardId}, ${card.title}, ${card.description ?? ''},
+        ${card.priority ?? null}, ${card.due_at ?? null}, ${doneColTitle},
+        ${card.creator_name ?? null},
+        ${card.assignee_names as string[]}, ${card.watcher_names as string[]},
+        ${card.label_names as string[]}, ${card.label_colors as string[]},
+        ${Number(card.checklist_total)}, ${Number(card.checklist_done_count)},
+        ${Number(card.comment_total)}
+      )
+    `;
+  }
+
+  // Delete done cards
+  await db`DELETE FROM cards WHERE column_id = ${doneColId} AND board_id = ${args.boardId}`;
+
+  // Mark sprint as completed
+  await db`
+    UPDATE sprints SET status = 'completed', ended_at = now()
+    WHERE id = ${args.sprintId}
+  `;
+
+  return doneCards.length;
+}
+

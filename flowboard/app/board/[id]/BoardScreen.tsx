@@ -6,12 +6,13 @@ import { AppShell } from "@/components/AppShell";
 import { Button, Input, AvatarStack, InlineEdit, Menu, MenuItem, Chip } from "@/components/ui";
 import { I } from "@/components/Icons";
 import { useMe } from "@/hooks/useMe";
-import { useBoard, useUpdateColumn } from "@/hooks/useBoard";
+import { useBoard, useUpdateColumn, useActiveSprint, useStartSprint, useCompleteSprint } from "@/hooks/useBoard";
 import { useUpdateBoard, useDeleteBoard } from "@/hooks/useBoards";
 import { KanbanBoard } from "./KanbanBoard";
 import { CardModal } from "./CardModal";
 import { BoardMembersModal } from "./BoardMembersModal";
 import { BoardLabelsModal } from "./BoardLabelsModal";
+import { SprintArchiveModal } from "./SprintArchiveModal";
 
 export function BoardScreen({ boardId }: { boardId: string }) {
   const router = useRouter();
@@ -26,6 +27,13 @@ export function BoardScreen({ boardId }: { boardId: string }) {
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [managingMembers, setManagingMembers] = useState(false);
   const [managingLabels, setManagingLabels] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
+  const [showSprintDialog, setShowSprintDialog] = useState(false);
+
+  // Sprint hooks
+  const { data: activeSprint } = useActiveSprint(boardId);
+  const startSprintMut = useStartSprint(boardId);
+  const completeSprintMut = useCompleteSprint(boardId);
 
   // Reset filters when board changes
   useEffect(() => {
@@ -116,13 +124,62 @@ export function BoardScreen({ boardId }: { boardId: string }) {
             {board.starred ? I.starF : I.star}
           </button>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {/* Sprint indicator */}
+          {activeSprint && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 10px",
+                borderRadius: 8,
+                background: "color-mix(in oklab, var(--accent) 12%, transparent)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--accent)",
+              }}
+            >
+              <span style={{ display: "inline-flex" }}>{I.rocket}</span>
+              {activeSprint.title}
+            </div>
+          )}
+
           <AvatarStack users={memberProfiles} size={24} max={4} />
           <Button size="sm" variant="default" onClick={() => setManagingLabels(true)}>
             {I.filter} Labels
           </Button>
+          <Button size="sm" variant="default" onClick={() => setShowArchive(true)}>
+            {I.archive} Archive
+          </Button>
           {me?.is_admin && (
             <>
+              {!activeSprint ? (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setShowSprintDialog(true)}
+                >
+                  {I.rocket} Start Sprint
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `Complete "${activeSprint.title}"?\n\nAll cards in the "Done" column will be archived and removed from the board.`
+                      )
+                    ) {
+                      completeSprintMut.mutate(activeSprint.id);
+                    }
+                  }}
+                  style={{ borderColor: "var(--ok)", color: "var(--ok)" }}
+                >
+                  {I.check} Complete Sprint
+                </Button>
+              )}
               <Button size="sm" variant="default" onClick={() => setManagingMembers(true)}>
                 {I.users} Members
               </Button>
@@ -132,7 +189,7 @@ export function BoardScreen({ boardId }: { boardId: string }) {
                 onClick={() => {
                   if (confirm("Are you sure you want to delete this board? This action cannot be undone.")) {
                     deleteBoard.mutate(boardId, {
-                      onSuccess: () => router.push("/")
+                      onSuccess: () => router.push("/"),
                     });
                   }
                 }}
@@ -234,6 +291,22 @@ export function BoardScreen({ boardId }: { boardId: string }) {
         />
       )}
 
+      {showArchive && (
+        <SprintArchiveModal boardId={boardId} onClose={() => setShowArchive(false)} />
+      )}
+
+      {showSprintDialog && (
+        <StartSprintDialog
+          onStart={(title, goal) => {
+            startSprintMut.mutate(
+              { title, goal },
+              { onSuccess: () => setShowSprintDialog(false) }
+            );
+          }}
+          onClose={() => setShowSprintDialog(false)}
+        />
+      )}
+
       <style jsx>{`
         @media (max-width: 720px) {
           .hide-on-mobile {
@@ -242,6 +315,100 @@ export function BoardScreen({ boardId }: { boardId: string }) {
         }
       `}</style>
     </AppShell>
+  );
+}
+
+// ---- Start Sprint Dialog ----
+function StartSprintDialog({
+  onStart,
+  onClose,
+}: {
+  onStart: (title: string, goal: string) => void;
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [goal, setGoal] = useState("");
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,.5)",
+          zIndex: 300,
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%,-50%)",
+          background: "var(--surface)",
+          borderRadius: 14,
+          padding: "24px",
+          width: 400,
+          maxWidth: "90vw",
+          zIndex: 301,
+          boxShadow: "0 20px 60px rgba(0,0,0,.3)",
+        }}
+      >
+        <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "var(--accent)" }}>{I.rocket}</span> Start New Sprint
+        </h3>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-3)", display: "block", marginBottom: 4 }}>
+            Sprint Name *
+          </label>
+          <Input
+            id="sprint-title"
+            placeholder="e.g. Sprint 1"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            autoFocus
+            style={{ width: "100%" }}
+          />
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-3)", display: "block", marginBottom: 4 }}>
+            Sprint Goal (optional)
+          </label>
+          <textarea
+            id="sprint-goal"
+            placeholder="What's the objective of this sprint?"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "8px 10px",
+              borderRadius: 8,
+              border: "1px solid var(--line)",
+              background: "var(--surface-2)",
+              color: "var(--ink)",
+              fontSize: 13,
+              resize: "vertical",
+              fontFamily: "inherit",
+            }}
+          />
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => title.trim() && onStart(title.trim(), goal.trim())}
+            disabled={!title.trim()}
+          >
+            {I.rocket} Start Sprint
+          </Button>
+        </div>
+      </div>
+    </>
   );
 }
 

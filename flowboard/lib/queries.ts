@@ -9,6 +9,9 @@ import type {
   ActivityWithActor,
   Profile,
   Board,
+  Sprint,
+  SprintArchivedCard,
+  SprintArchiveDetail,
 } from "@/types/domain";
 
 // ----------------------------------------------------------------------------
@@ -255,3 +258,50 @@ export async function seedDemoWorkspace(): Promise<void> {
   if (!session?.user?.id) return;
   await db`SELECT seed_demo_workspace(${session.user.id}::uuid)`;
 }
+
+// ----------------------------------------------------------------------------
+// Sprints
+// ----------------------------------------------------------------------------
+export async function getActiveSprint(boardId: string): Promise<Sprint | null> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const rows = await db`
+    SELECT * FROM sprints
+    WHERE board_id = ${boardId} AND status = 'active'
+    LIMIT 1
+  `;
+  return rows.length ? (rows[0] as unknown as Sprint) : null;
+}
+
+export async function listSprintArchives(boardId: string): Promise<Sprint[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+  const rows = await db`
+    SELECT s.*,
+      (SELECT COUNT(*)::int FROM sprint_archived_cards sac WHERE sac.sprint_id = s.id) AS card_count
+    FROM sprints s
+    WHERE s.board_id = ${boardId} AND s.status = 'completed'
+    ORDER BY s.ended_at DESC
+  `;
+  return rows as unknown as Sprint[];
+}
+
+export async function getSprintArchiveDetail(sprintId: string): Promise<SprintArchiveDetail | null> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const sprintRows = await db`SELECT * FROM sprints WHERE id = ${sprintId}`;
+  if (!sprintRows.length) return null;
+
+  const cardRows = await db`
+    SELECT * FROM sprint_archived_cards
+    WHERE sprint_id = ${sprintId}
+    ORDER BY completed_at
+  `;
+
+  return {
+    sprint: sprintRows[0] as unknown as Sprint,
+    cards: cardRows as unknown as SprintArchivedCard[],
+  };
+}
+

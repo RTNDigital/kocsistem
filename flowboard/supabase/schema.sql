@@ -338,6 +338,64 @@ create policy "activities_insert" on public.activities
     actor_id = auth.uid() and public.has_board_access(board_id)
   );
 
+-- ----------------------------------------------------------------------------
+-- sprints
+-- ----------------------------------------------------------------------------
+create type sprint_status as enum ('active', 'completed');
+
+create table if not exists public.sprints (
+  id            uuid primary key default uuid_generate_v4(),
+  board_id      uuid not null references public.boards(id) on delete cascade,
+  title         text not null,
+  sprint_number int  not null default 1,
+  goal          text not null default '',
+  status        sprint_status not null default 'active',
+  started_at    timestamptz not null default now(),
+  ended_at      timestamptz
+);
+create index if not exists sprints_board_idx on public.sprints(board_id, started_at desc);
+
+-- ----------------------------------------------------------------------------
+-- sprint_archived_cards  (denormalized snapshot of cards when sprint completes)
+-- ----------------------------------------------------------------------------
+create table if not exists public.sprint_archived_cards (
+  id                uuid primary key default uuid_generate_v4(),
+  sprint_id         uuid not null references public.sprints(id) on delete cascade,
+  board_id          uuid not null references public.boards(id) on delete cascade,
+  card_title        text not null,
+  card_description  text not null default '',
+  card_priority     text,
+  card_due_at       timestamptz,
+  column_title      text not null default 'Done',
+  created_by_name   text,
+  assignee_names    text[] not null default '{}',
+  watcher_names     text[] not null default '{}',
+  label_names       text[] not null default '{}',
+  label_colors      text[] not null default '{}',
+  checklist_total   int not null default 0,
+  checklist_done    int not null default 0,
+  comment_count     int not null default 0,
+  completed_at      timestamptz not null default now()
+);
+create index if not exists sprint_archived_board_idx on public.sprint_archived_cards(board_id);
+create index if not exists sprint_archived_sprint_idx on public.sprint_archived_cards(sprint_id);
+
+-- RLS for sprints
+alter table public.sprints enable row level security;
+create policy "sprints_select" on public.sprints
+  for select using (public.has_board_access(board_id));
+create policy "sprints_write" on public.sprints
+  for all using (public.is_board_editor(board_id))
+  with check (public.is_board_editor(board_id));
+
+-- RLS for sprint_archived_cards
+alter table public.sprint_archived_cards enable row level security;
+create policy "sprint_archived_select" on public.sprint_archived_cards
+  for select using (public.has_board_access(board_id));
+create policy "sprint_archived_write" on public.sprint_archived_cards
+  for all using (public.is_board_editor(board_id))
+  with check (public.is_board_editor(board_id));
+
 -- ============================================================================
 -- Grants  (PostgREST needs explicit table-level privileges in addition to RLS)
 -- ============================================================================

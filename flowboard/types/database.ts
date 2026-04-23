@@ -17,6 +17,7 @@ export type ActivityType =
   | "card_completed"
   | "card_commented"
   | "board_created";
+export type SprintStatus = "active" | "completed";
 
 export interface Database {
   public: {
@@ -209,6 +210,67 @@ export interface Database {
         };
         Update: never;
       };
+      sprints: {
+        Row: {
+          id: string;
+          board_id: string;
+          title: string;
+          sprint_number: number;
+          goal: string;
+          status: SprintStatus;
+          started_at: string;
+          ended_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          board_id: string;
+          title: string;
+          sprint_number?: number;
+          goal?: string;
+          status?: SprintStatus;
+        };
+        Update: Partial<{ title: string; goal: string; status: SprintStatus; ended_at: string | null }>;
+      };
+      sprint_archived_cards: {
+        Row: {
+          id: string;
+          sprint_id: string;
+          board_id: string;
+          card_title: string;
+          card_description: string;
+          card_priority: string | null;
+          card_due_at: string | null;
+          column_title: string;
+          created_by_name: string | null;
+          assignee_names: string[];
+          watcher_names: string[];
+          label_names: string[];
+          label_colors: string[];
+          checklist_total: number;
+          checklist_done: number;
+          comment_count: number;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          sprint_id: string;
+          board_id: string;
+          card_title: string;
+          card_description?: string;
+          card_priority?: string | null;
+          card_due_at?: string | null;
+          column_title?: string;
+          created_by_name?: string | null;
+          assignee_names?: string[];
+          watcher_names?: string[];
+          label_names?: string[];
+          label_colors?: string[];
+          checklist_total?: number;
+          checklist_done?: number;
+          comment_count?: number;
+        };
+        Update: never;
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -221,6 +283,7 @@ export interface Database {
       board_role: BoardRole;
       card_priority: CardPriority;
       activity_type: ActivityType;
+      sprint_status: SprintStatus;
     };
   };
 }

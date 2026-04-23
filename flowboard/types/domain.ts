@@ -1,4 +1,4 @@
-import type { Database, BoardRole, CardPriority } from "./database";
+import type { Database, BoardRole, CardPriority, SprintStatus } from "./database";
 
 type T = Database["public"]["Tables"];
 
@@ -11,8 +11,10 @@ export type CardRow = T["cards"]["Row"];
 export type ChecklistItem = T["checklist_items"]["Row"];
 export type Comment = T["comments"]["Row"];
 export type Activity = T["activities"]["Row"];
+export type Sprint = T["sprints"]["Row"];
+export type SprintArchivedCard = T["sprint_archived_cards"]["Row"];
 
-export type { BoardRole, CardPriority };
+export type { BoardRole, CardPriority, SprintStatus };
 
 // Hydrated card with its joined collections
 export interface Card extends CardRow {
@@ -43,4 +45,9 @@ export interface BoardDetail {
 
 export interface ActivityWithActor extends Activity {
   actor: Profile | null;
+}
+
+export interface SprintArchiveDetail {
+  sprint: Sprint;
+  cards: SprintArchivedCard[];
 }
