@@ -28,11 +28,11 @@ import type { BoardDetail, Card, Column } from "@/types/domain";
 import type { CardPriority } from "@/types/database";
 import { positionAtEnd, positionForIndex } from "@/lib/ordering";
 
-export function useBoard(boardId: string) {
+export function useBoard(boardId: string, enabled = true) {
   return useQuery({
     queryKey: ["board", boardId],
     queryFn: () => getBoardDetail(boardId),
-    enabled: !!boardId,
+    enabled: !!boardId && enabled,
   });
 }
 

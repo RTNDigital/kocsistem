@@ -4,11 +4,13 @@ import { Avatar } from "@/components/ui";
 import { I } from "@/components/Icons";
 import { useLeaderboard } from "@/hooks/useBoard";
 import type { LeaderboardEntry } from "@/lib/queries";
+import { AppShell } from "@/components/AppShell";
 
 export function LeaderboardScreen() {
   const { data: entries = [], isLoading } = useLeaderboard();
 
   return (
+    <AppShell>
     <div
       style={{
         maxWidth: 680,
@@ -69,6 +71,7 @@ export function LeaderboardScreen() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }
 

@@ -19,8 +19,9 @@ type Priority = "high" | "med" | "low";
 
 export function BoardScreen({ boardId }: { boardId: string }) {
   const router = useRouter();
-  const { data: me } = useMe();
-  const { data, isLoading } = useBoard(boardId);
+  const { data: me, isLoading: meLoading } = useMe();
+  const { data, isLoading: boardLoading } = useBoard(boardId, !!me);
+  const isLoading = meLoading || boardLoading;
   const toggleStar = useUpdateBoard();
   const updateBoard = useUpdateBoard();
   const deleteBoard = useDeleteBoard();
@@ -324,10 +325,12 @@ export function BoardScreen({ boardId }: { boardId: string }) {
         />
       ) : (
         <BoardListView
+          boardId={boardId}
           cards={filteredCards}
           columns={columns}
           labels={labels}
           users={memberProfiles}
+          actorId={me?.id ?? ""}
           onOpenCard={setOpenCardId}
         />
       )}
