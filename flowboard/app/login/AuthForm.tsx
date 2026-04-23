@@ -38,9 +38,6 @@ export function AuthForm({ mode }: Props) {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Logo />
-          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: "-.01em" }}>
-            KocSistemBoard
-          </span>
         </div>
 
         <div style={{ maxWidth: 360, width: "100%", margin: "0 auto" }}>

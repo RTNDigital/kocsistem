@@ -66,8 +66,8 @@ export function useUpdateCard(boardId: string) {
       patch,
     }: {
       cardId: string;
-      patch: { title?: string; description?: string; priority?: CardPriority | null; due_at?: string | null };
-    }) => updateCard(cardId, patch),
+      patch: { title?: string; description?: string; priority?: CardPriority | null; due_at?: string | null; start_at?: string | null };
+    }) => updateCard(cardId, patch, { boardId }),
     onMutate: async ({ cardId, patch }) => {
       await qc.cancelQueries({ queryKey: key(boardId) });
       await qc.cancelQueries({ queryKey: ["card", cardId] });
@@ -93,6 +93,7 @@ export function useUpdateCard(boardId: string) {
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: key(boardId) });
       qc.invalidateQueries({ queryKey: ["card", vars.cardId] });
+      qc.invalidateQueries({ queryKey: ["cardActivities", vars.cardId] });
     },
   });
 }
@@ -100,7 +101,7 @@ export function useUpdateCard(boardId: string) {
 export function useDeleteCard(boardId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (cardId: string) => deleteCard(cardId),
+    mutationFn: (cardId: string) => deleteCard(cardId, boardId),
     onMutate: async (cardId) => {
       await qc.cancelQueries({ queryKey: key(boardId) });
       const prev = qc.getQueryData<BoardDetail>(key(boardId));
@@ -301,7 +302,7 @@ export function useToggleCardLabel(boardId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (args: { cardId: string; labelId: string; on: boolean }) =>
-      toggleCardLabel(args),
+      toggleCardLabel({ ...args, boardId }),
     onMutate: async (args) => {
       await qc.cancelQueries({ queryKey: key(boardId) });
       const prev = qc.getQueryData<BoardDetail>(key(boardId));
@@ -330,6 +331,7 @@ export function useToggleCardLabel(boardId: string) {
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: key(boardId) });
       qc.invalidateQueries({ queryKey: ["card", vars.cardId] });
+      qc.invalidateQueries({ queryKey: ["cardActivities", vars.cardId] });
     },
   });
 }
@@ -338,7 +340,7 @@ export function useToggleCardAssignee(boardId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (args: { cardId: string; userId: string; on: boolean }) =>
-      toggleCardAssignee(args),
+      toggleCardAssignee({ ...args, boardId }),
     onMutate: async (args) => {
       await qc.cancelQueries({ queryKey: key(boardId) });
       const prev = qc.getQueryData<BoardDetail>(key(boardId));
@@ -367,6 +369,7 @@ export function useToggleCardAssignee(boardId: string) {
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: key(boardId) });
       qc.invalidateQueries({ queryKey: ["card", vars.cardId] });
+      qc.invalidateQueries({ queryKey: ["cardActivities", vars.cardId] });
     },
   });
 }

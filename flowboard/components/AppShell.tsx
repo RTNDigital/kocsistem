@@ -71,7 +71,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </svg>
         </button>
         <Logo size={22} />
-        <span style={{ fontWeight: 700, fontSize: 14, color: "var(--accent)" }}>KocSistemBoard</span>
         <div style={{ marginLeft: "auto" }}>{me && <Avatar user={me} size={26} />}</div>
       </div>
 

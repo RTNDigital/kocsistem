@@ -173,9 +173,18 @@ export async function updateCard(
     description?: string;
     priority?: CardPriority | null;
     due_at?: string | null;
-  }
+    start_at?: string | null;
+  },
+  context?: { boardId: string }
 ) {
-  await requireUser();
+  const userId = await requireUser();
+
+  let current: Record<string, unknown> | null = null;
+  if (context?.boardId) {
+    const rows = await db`SELECT title, description, priority, due_at, start_at FROM cards WHERE id = ${cardId}`;
+    current = rows[0] ?? null;
+  }
+
   if (patch.title !== undefined)
     await db`UPDATE cards SET title = ${patch.title} WHERE id = ${cardId}`;
   if (patch.description !== undefined)
@@ -184,10 +193,38 @@ export async function updateCard(
     await db`UPDATE cards SET priority = ${patch.priority ?? null} WHERE id = ${cardId}`;
   if ("due_at" in patch)
     await db`UPDATE cards SET due_at = ${patch.due_at ?? null} WHERE id = ${cardId}`;
+  if ("start_at" in patch)
+    await db`UPDATE cards SET start_at = ${patch.start_at ?? null} WHERE id = ${cardId}`;
+
+  if (context?.boardId && current) {
+    const { boardId } = context;
+    if (patch.title !== undefined && patch.title !== current.title)
+      await db`INSERT INTO activities (board_id, card_id, actor_id, type, payload) VALUES (${boardId}, ${cardId}, ${userId}, 'card_title_changed', ${JSON.stringify({ old: current.title, new: patch.title })})`;
+    if (patch.description !== undefined && patch.description !== current.description)
+      await db`INSERT INTO activities (board_id, card_id, actor_id, type, payload) VALUES (${boardId}, ${cardId}, ${userId}, 'card_description_changed', ${JSON.stringify({})})`;
+    if ("priority" in patch && patch.priority !== current.priority)
+      await db`INSERT INTO activities (board_id, card_id, actor_id, type, payload) VALUES (${boardId}, ${cardId}, ${userId}, 'card_priority_changed', ${JSON.stringify({ old: current.priority, new: patch.priority })})`;
+    if ("due_at" in patch && patch.due_at !== current.due_at)
+      await db`INSERT INTO activities (board_id, card_id, actor_id, type, payload) VALUES (${boardId}, ${cardId}, ${userId}, 'card_due_changed', ${JSON.stringify({ old: current.due_at, new: patch.due_at })})`;
+    if ("start_at" in patch && patch.start_at !== current.start_at)
+      await db`INSERT INTO activities (board_id, card_id, actor_id, type, payload) VALUES (${boardId}, ${cardId}, ${userId}, 'card_start_changed', ${JSON.stringify({ old: current.start_at, new: patch.start_at })})`;
+  }
 }
 
-export async function deleteCard(cardId: string) {
-  await requireUser();
+export async function deleteCard(cardId: string, boardId?: string) {
+  const userId = await requireUser();
+
+  if (boardId) {
+    const rows = await db`SELECT title FROM cards WHERE id = ${cardId}`;
+    if (rows.length > 0) {
+      await db`
+        INSERT INTO activities (board_id, card_id, actor_id, type, payload)
+        VALUES (${boardId}, ${cardId}, ${userId}, 'card_deleted',
+          ${JSON.stringify({ title: rows[0].title, card_id: cardId })})
+      `;
+    }
+  }
+
   await db`DELETE FROM cards WHERE id = ${cardId}`;
 }
 
@@ -229,8 +266,9 @@ export async function toggleCardLabel(args: {
   cardId: string;
   labelId: string;
   on: boolean;
+  boardId?: string;
 }) {
-  await requireUser();
+  const userId = await requireUser();
   if (args.on) {
     await db`
       INSERT INTO card_labels (card_id, label_id)
@@ -242,14 +280,27 @@ export async function toggleCardLabel(args: {
       DELETE FROM card_labels WHERE card_id = ${args.cardId} AND label_id = ${args.labelId}
     `;
   }
+
+  if (args.boardId) {
+    const labelRows = await db`SELECT name, color FROM labels WHERE id = ${args.labelId}`;
+    if (labelRows.length > 0) {
+      const type = args.on ? "card_label_added" : "card_label_removed";
+      await db`
+        INSERT INTO activities (board_id, card_id, actor_id, type, payload)
+        VALUES (${args.boardId}, ${args.cardId}, ${userId}, ${type},
+          ${JSON.stringify({ label_id: args.labelId, label_name: labelRows[0].name, label_color: labelRows[0].color })})
+      `;
+    }
+  }
 }
 
 export async function toggleCardAssignee(args: {
   cardId: string;
   userId: string;
   on: boolean;
+  boardId?: string;
 }) {
-  await requireUser();
+  const actorId = await requireUser();
   if (args.on) {
     await db`
       INSERT INTO card_assignees (card_id, user_id)
@@ -260,6 +311,18 @@ export async function toggleCardAssignee(args: {
     await db`
       DELETE FROM card_assignees WHERE card_id = ${args.cardId} AND user_id = ${args.userId}
     `;
+  }
+
+  if (args.boardId) {
+    const userRows = await db`SELECT name FROM profiles WHERE id = ${args.userId}`;
+    if (userRows.length > 0) {
+      const type = args.on ? "card_assignee_added" : "card_assignee_removed";
+      await db`
+        INSERT INTO activities (board_id, card_id, actor_id, type, payload)
+        VALUES (${args.boardId}, ${args.cardId}, ${actorId}, ${type},
+          ${JSON.stringify({ user_id: args.userId, user_name: userRows[0].name })})
+      `;
+    }
   }
 }
 
@@ -289,22 +352,63 @@ export async function addChecklistItem(args: {
   cardId: string;
   text: string;
   siblingsPositions: string[];
+  boardId?: string;
 }) {
-  await requireUser();
+  const userId = await requireUser();
   const position = positionAtEnd(args.siblingsPositions);
   await db`
     INSERT INTO checklist_items (card_id, text, position)
     VALUES (${args.cardId}, ${args.text}, ${position})
   `;
+
+  if (args.boardId) {
+    await db`
+      INSERT INTO activities (board_id, card_id, actor_id, type, payload)
+      VALUES (${args.boardId}, ${args.cardId}, ${userId}, 'card_checklist_added',
+        ${JSON.stringify({ text: args.text })})
+    `;
+  }
 }
 
-export async function toggleChecklistItem(itemId: string, done: boolean) {
-  await requireUser();
+export async function toggleChecklistItem(
+  itemId: string,
+  done: boolean,
+  context?: { boardId: string; cardId: string }
+) {
+  const userId = await requireUser();
+
+  if (context) {
+    const rows = await db`SELECT text FROM checklist_items WHERE id = ${itemId}`;
+    if (rows.length > 0) {
+      const type = done ? "card_checklist_done" : "card_checklist_undone";
+      await db`
+        INSERT INTO activities (board_id, card_id, actor_id, type, payload)
+        VALUES (${context.boardId}, ${context.cardId}, ${userId}, ${type},
+          ${JSON.stringify({ text: rows[0].text })})
+      `;
+    }
+  }
+
   await db`UPDATE checklist_items SET done = ${done} WHERE id = ${itemId}`;
 }
 
-export async function deleteChecklistItem(itemId: string) {
-  await requireUser();
+export async function deleteChecklistItem(
+  itemId: string,
+  context?: { boardId: string; cardId: string }
+) {
+  const userId = await requireUser();
+
+  if (context) {
+    const rows = await db`SELECT text FROM checklist_items WHERE id = ${itemId}`;
+    if (rows.length > 0) {
+      await db`
+        INSERT INTO activities (board_id, card_id, actor_id, type, payload)
+        VALUES (${context.boardId}, ${context.cardId}, ${userId}, 'card_checklist_deleted',
+          ${JSON.stringify({ text: rows[0].text })})
+      `;
+    }
+  }
+
   await db`DELETE FROM checklist_items WHERE id = ${itemId}`;
 }
 

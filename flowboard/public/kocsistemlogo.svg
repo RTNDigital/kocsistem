@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 16 356.59 109">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(20, 25)" filter="url(#shadow)">
+    <rect x="0" y="0" width="100" height="100" rx="16" fill="#002D72"/>
+    
+    <line x1="33" y1="15" x2="33" y2="85" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2" stroke-linecap="round"/>
+    <line x1="66" y1="15" x2="66" y2="85" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2" stroke-linecap="round"/>
+
+    <rect x="10" y="15" width="16" height="20" rx="4" fill="#FFFFFF"/>
+    <rect x="10" y="43" width="16" height="14" rx="4" fill="#FFFFFF" fill-opacity="0.6"/>
+    
+    <rect x="42" y="15" width="16" height="32" rx="4" fill="#FF6600"/>
+    
+    <rect x="74" y="15" width="16" height="16" rx="4" fill="#00C853"/>
+    <rect x="74" y="39" width="16" height="24" rx="4" fill="#00C853"/>
+    <rect x="74" y="71" width="16" height="14" rx="4" fill="#00C853"/>
+  </g>
+
+  <g transform="translate(140, 85)">
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#002D72">Koc<tspan fill="#FF6600">Ban</tspan></text>
+  </g>
+</svg>

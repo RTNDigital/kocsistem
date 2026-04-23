@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { getCardDetail } from "@/lib/queries";
+import { getCardDetail, getCardActivities } from "@/lib/queries";
 import {
   addChecklistItem,
   addComment,
@@ -22,17 +22,26 @@ export function useCardDetail(cardId: string | null) {
   });
 }
 
+export function useCardActivities(cardId: string) {
+  return useQuery({
+    queryKey: ["cardActivities", cardId],
+    queryFn: () => getCardActivities(cardId),
+    enabled: !!cardId,
+  });
+}
+
 export function useAddChecklist(cardId: string, boardId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (text: string) => {
       const cur = qc.getQueryData<CardDetail>(["card", cardId]);
       const siblingsPositions = (cur?.checklist ?? []).map((i) => i.position);
-      return addChecklistItem({ cardId, text, siblingsPositions });
+      return addChecklistItem({ cardId, boardId, text, siblingsPositions });
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["card", cardId] });
       qc.invalidateQueries({ queryKey: ["board", boardId] });
+      qc.invalidateQueries({ queryKey: ["cardActivities", cardId] });
     },
   });
 }
@@ -41,7 +50,7 @@ export function useToggleChecklist(cardId: string, boardId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ itemId, done }: { itemId: string; done: boolean }) =>
-      toggleChecklistItem(itemId, done),
+      toggleChecklistItem(itemId, done, { boardId, cardId }),
     onMutate: async ({ itemId, done }) => {
       await qc.cancelQueries({ queryKey: ["card", cardId] });
       const prev = qc.getQueryData<CardDetail>(["card", cardId]);
@@ -58,6 +67,7 @@ export function useToggleChecklist(cardId: string, boardId: string) {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["card", cardId] });
       qc.invalidateQueries({ queryKey: ["board", boardId] });
+      qc.invalidateQueries({ queryKey: ["cardActivities", cardId] });
     },
   });
 }
@@ -65,10 +75,11 @@ export function useToggleChecklist(cardId: string, boardId: string) {
 export function useDeleteChecklist(cardId: string, boardId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (itemId: string) => deleteChecklistItem(itemId),
+    mutationFn: (itemId: string) => deleteChecklistItem(itemId, { boardId, cardId }),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["card", cardId] });
       qc.invalidateQueries({ queryKey: ["board", boardId] });
+      qc.invalidateQueries({ queryKey: ["cardActivities", cardId] });
     },
   });
 }
@@ -82,6 +93,7 @@ export function useAddComment(cardId: string, boardId: string) {
       qc.invalidateQueries({ queryKey: ["card", cardId] });
       qc.invalidateQueries({ queryKey: ["board", boardId] });
       qc.invalidateQueries({ queryKey: ["activity"] });
+      qc.invalidateQueries({ queryKey: ["cardActivities", cardId] });
     },
   });
 }

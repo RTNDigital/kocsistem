@@ -16,7 +16,21 @@ export type ActivityType =
   | "card_moved"
   | "card_completed"
   | "card_commented"
-  | "board_created";
+  | "board_created"
+  | "card_title_changed"
+  | "card_description_changed"
+  | "card_priority_changed"
+  | "card_due_changed"
+  | "card_start_changed"
+  | "card_label_added"
+  | "card_label_removed"
+  | "card_assignee_added"
+  | "card_assignee_removed"
+  | "card_checklist_added"
+  | "card_checklist_done"
+  | "card_checklist_undone"
+  | "card_checklist_deleted"
+  | "card_deleted";
 export type SprintStatus = "active" | "completed";
 
 export interface Database {

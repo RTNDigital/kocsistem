@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarStack, Button, Chip, InlineEdit, Menu, MenuItem, Textarea, Input } from "@/components/ui";
 import { I, Icon } from "@/components/Icons";
 import { useMe } from "@/hooks/useMe";
-import { useCardDetail, useAddChecklist, useToggleChecklist, useDeleteChecklist, useAddComment } from "@/hooks/useCard";
+import { useCardDetail, useAddChecklist, useToggleChecklist, useDeleteChecklist, useAddComment, useCardActivities } from "@/hooks/useCard";
 import { useDeleteCard, useToggleCardAssignee, useToggleCardLabel, useUpdateCard, useMoveCard, useToggleCardWatcher } from "@/hooks/useBoard";
 import type { Column, Label, Profile } from "@/types/domain";
 import type { CardPriority } from "@/types/database";
@@ -35,6 +35,8 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
 
   const [comment, setComment] = useState("");
   const [checkText, setCheckText] = useState("");
+  const [activityTab, setActivityTab] = useState<"comments" | "log">("comments");
+  const { data: cardLogs = [] } = useCardActivities(cardId);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -334,72 +336,131 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
               </form>
             </Block>
 
-            <Block label={`Activity · ${card.comments.length} comments`}>
-              <form onSubmit={submitComment} style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-                {me && <Avatar user={me} size={28} />}
-                <div style={{ flex: 1 }}>
-                  <Textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Write a comment… (⌘↵ to send)"
-                    onKeyDown={(e) => {
-                      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") submitComment(e);
-                    }}
-                    style={{ minHeight: 60 }}
-                  />
-                  {comment.trim() && (
-                    <div style={{ marginTop: 6, display: "flex", justifyContent: "flex-end" }}>
-                      <Button variant="primary" size="sm" type="submit">
-                        Send
-                      </Button>
+            <Block
+              label="Activity"
+              right={
+                <div style={{ display: "flex", gap: 2 }}>
+                  {(["comments", "log"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActivityTab(tab)}
+                      style={{
+                        padding: "2px 10px",
+                        borderRadius: 5,
+                        border: "1px solid " + (activityTab === tab ? "var(--accent)" : "var(--line)"),
+                        background: activityTab === tab ? "var(--accent)" : "transparent",
+                        color: activityTab === tab ? "#fff" : "var(--ink-3)",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        letterSpacing: ".04em",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {tab === "comments" ? `Comments (${card.comments.length})` : `Log (${cardLogs.length})`}
+                    </button>
+                  ))}
+                </div>
+              }
+            >
+              {activityTab === "comments" ? (
+                <>
+                  <form onSubmit={submitComment} style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                    {me && <Avatar user={me} size={28} />}
+                    <div style={{ flex: 1 }}>
+                      <Textarea
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Write a comment… (⌘↵ to send)"
+                        onKeyDown={(e) => {
+                          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") submitComment(e);
+                        }}
+                        style={{ minHeight: 60 }}
+                      />
+                      {comment.trim() && (
+                        <div style={{ marginTop: 6, display: "flex", justifyContent: "flex-end" }}>
+                          <Button variant="primary" size="sm" type="submit">
+                            Send
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </form>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {card.comments.map((c) => (
+                      <div key={c.id} style={{ display: "flex", gap: 10 }}>
+                        {c.author && <Avatar user={c.author} size={28} />}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginBottom: 3 }}>
+                            <b style={{ color: "var(--ink)", fontWeight: 600 }}>
+                              {c.author?.name ?? "Unknown"}
+                            </b>
+                            <span
+                              className="mono"
+                              style={{ color: "var(--ink-4)", marginLeft: 8, fontSize: 11 }}
+                            >
+                              {relativeTime(c.created_at)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 13.5,
+                              color: "var(--ink-2)",
+                              lineHeight: 1.5,
+                              background: "var(--surface-2)",
+                              borderRadius: 8,
+                              padding: "8px 10px",
+                            }}
+                          >
+                            {c.text}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {card.comments.length === 0 && (
+                      <div style={{ fontSize: 12.5, color: "var(--ink-4)", fontStyle: "italic", paddingLeft: 38 }}>
+                        No comments yet.
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {cardLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "4px 0" }}
+                    >
+                      <div
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: logDotColor(log.type as string),
+                          marginTop: 6,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 13, color: "var(--ink-2)" }}>
+                          {describeLog(log.type as string, log.payload)}
+                        </span>
+                        <div style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 1 }}>
+                          <span style={{ fontWeight: 600 }}>{log.actor?.name ?? "Unknown"}</span>
+                          <span className="mono" style={{ marginLeft: 6 }}>
+                            {relativeTime(log.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {cardLogs.length === 0 && (
+                    <div style={{ fontSize: 12.5, color: "var(--ink-4)", fontStyle: "italic" }}>
+                      No activity yet.
                     </div>
                   )}
                 </div>
-              </form>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {card.comments.map((c) => (
-                  <div key={c.id} style={{ display: "flex", gap: 10 }}>
-                    {c.author && <Avatar user={c.author} size={28} />}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginBottom: 3 }}>
-                        <b style={{ color: "var(--ink)", fontWeight: 600 }}>
-                          {c.author?.name ?? "Unknown"}
-                        </b>
-                        <span
-                          className="mono"
-                          style={{ color: "var(--ink-4)", marginLeft: 8, fontSize: 11 }}
-                        >
-                          {relativeTime(c.created_at)}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 13.5,
-                          color: "var(--ink-2)",
-                          lineHeight: 1.5,
-                          background: "var(--surface-2)",
-                          borderRadius: 8,
-                          padding: "8px 10px",
-                        }}
-                      >
-                        {c.text}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {card.comments.length === 0 && (
-                  <div
-                    style={{
-                      fontSize: 12.5,
-                      color: "var(--ink-4)",
-                      fontStyle: "italic",
-                      paddingLeft: 38,
-                    }}
-                  >
-                    No comments yet.
-                  </div>
-                )}
-              </div>
+              )}
             </Block>
           </div>
 
@@ -887,6 +948,44 @@ const popoverItem: React.CSSProperties = {
   cursor: "pointer",
   color: "var(--ink)",
 };
+
+function describeLog(type: string, payload: Record<string, unknown>): string {
+  switch (type) {
+    case "card_created":         return `Card created: "${payload.title ?? ""}"`;
+    case "card_deleted":         return `Card deleted: "${payload.title ?? ""}"`;
+    case "card_moved":           return "Moved to another column";
+    case "card_completed":       return "Card completed";
+    case "card_commented":       return `Commented`;
+    case "card_title_changed":   return `Title changed → "${payload.new ?? ""}"`;
+    case "card_description_changed": return "Description updated";
+    case "card_priority_changed":
+      return payload.new ? `Priority set to ${payload.new}` : "Priority removed";
+    case "card_due_changed":
+      return payload.new ? `Due date set to ${fmtDate(payload.new as string)}` : "Due date removed";
+    case "card_start_changed":
+      return payload.new ? `Start date set to ${fmtDate(payload.new as string)}` : "Start date removed";
+    case "card_label_added":     return `Label added: ${payload.label_name ?? ""}`;
+    case "card_label_removed":   return `Label removed: ${payload.label_name ?? ""}`;
+    case "card_assignee_added":  return `${payload.user_name ?? "Someone"} assigned`;
+    case "card_assignee_removed":return `${payload.user_name ?? "Someone"} unassigned`;
+    case "card_checklist_added": return `Checklist item added: "${payload.text ?? ""}"`;
+    case "card_checklist_done":  return `Checklist completed: "${payload.text ?? ""}"`;
+    case "card_checklist_undone":return `Checklist uncompleted: "${payload.text ?? ""}"`;
+    case "card_checklist_deleted":return `Checklist item deleted: "${payload.text ?? ""}"`;
+    default:                     return type;
+  }
+}
+
+function logDotColor(type: string): string {
+  if (type === "card_created")   return "var(--ok)";
+  if (type === "card_deleted")   return "var(--err)";
+  if (type.includes("checklist_done")) return "var(--ok)";
+  if (type.includes("checklist")) return "var(--ink-3)";
+  if (type.includes("assignee")) return "var(--accent)";
+  if (type.includes("label"))    return "var(--warn)";
+  if (type === "card_commented") return "var(--accent)";
+  return "var(--ink-4)";
+}
 
 function DescriptionEditor({
   value,

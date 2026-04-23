@@ -102,6 +102,7 @@ export async function getBoardDetail(boardId: string): Promise<BoardDetail | nul
     title: c.title as string,
     description: c.description as string,
     priority: c.priority as Card["priority"],
+    start_at: c.start_at as string | null,
     due_at: c.due_at as string | null,
     position: c.position as string,
     created_by: c.created_by as string | null,
@@ -200,6 +201,7 @@ export async function getCardDetail(cardId: string): Promise<CardDetail | null> 
     title: card.title as string,
     description: card.description as string,
     priority: card.priority as CardDetail["priority"],
+    start_at: card.start_at as string | null,
     due_at: card.due_at as string | null,
     position: card.position as string,
     created_by: card.created_by as string | null,
@@ -244,6 +246,87 @@ export async function recentActivity(limit = 8): Promise<ActivityWithActor[]> {
           email: r.ac_email as string,
           initials: r.ac_initials as string,
           color: r.ac_color as string,
+          created_at: r.ac_created_at as string,
+        }
+      : null,
+  })) as ActivityWithActor[];
+}
+
+// ----------------------------------------------------------------------------
+// Card-level activity log
+// ----------------------------------------------------------------------------
+export async function getCardActivities(cardId: string): Promise<ActivityWithActor[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const rows = await db`
+    SELECT a.*, p.id as ac_id, p.name as ac_name, p.email as ac_email,
+           p.initials as ac_initials, p.color as ac_color, p.created_at as ac_created_at
+    FROM activities a
+    JOIN board_members bm ON bm.board_id = a.board_id AND bm.user_id = ${session.user.id}
+    LEFT JOIN profiles p ON p.id = a.actor_id
+    WHERE a.card_id = ${cardId}
+    ORDER BY a.created_at ASC
+  `;
+
+  return rows.map((r) => ({
+    id: r.id as string,
+    board_id: r.board_id as string,
+    card_id: r.card_id as string | null,
+    actor_id: r.actor_id as string,
+    type: r.type as ActivityWithActor["type"],
+    payload: r.payload as ActivityWithActor["payload"],
+    created_at: r.created_at as string,
+    actor: r.ac_id
+      ? {
+          id: r.ac_id as string,
+          name: r.ac_name as string,
+          email: r.ac_email as string,
+          initials: r.ac_initials as string,
+          color: r.ac_color as string,
+          is_admin: false,
+          created_at: r.ac_created_at as string,
+        }
+      : null,
+  })) as ActivityWithActor[];
+}
+
+// Admin: activities for deleted cards (card_id became NULL after SET NULL)
+export async function getDeletedCardActivities(): Promise<ActivityWithActor[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const profile = await db`SELECT is_admin FROM profiles WHERE id = ${session.user.id}`;
+  if (!profile.length || !profile[0].is_admin) return [];
+
+  const rows = await db`
+    SELECT a.*, p.id as ac_id, p.name as ac_name, p.email as ac_email,
+           p.initials as ac_initials, p.color as ac_color, p.created_at as ac_created_at
+    FROM activities a
+    LEFT JOIN profiles p ON p.id = a.actor_id
+    WHERE a.card_id IS NULL
+      AND a.type != 'board_created'
+      AND a.payload->>'card_id' IS NOT NULL
+    ORDER BY a.created_at DESC
+    LIMIT 200
+  `;
+
+  return rows.map((r) => ({
+    id: r.id as string,
+    board_id: r.board_id as string,
+    card_id: null,
+    actor_id: r.actor_id as string,
+    type: r.type as ActivityWithActor["type"],
+    payload: r.payload as ActivityWithActor["payload"],
+    created_at: r.created_at as string,
+    actor: r.ac_id
+      ? {
+          id: r.ac_id as string,
+          name: r.ac_name as string,
+          email: r.ac_email as string,
+          initials: r.ac_initials as string,
+          color: r.ac_color as string,
+          is_admin: false,
           created_at: r.ac_created_at as string,
         }
       : null,

@@ -59,12 +59,8 @@ export const I = {
 };
 
 export function Logo({ size = 28 }: { size?: number }) {
+  const displaySize = size * 1.6;
   return (
-    <svg width={size} height={size} viewBox="0 0 28 28" fill="none">
-      <rect x="1" y="1" width="26" height="26" rx="6" fill="var(--ink)" />
-      <rect x="6" y="8" width="4" height="14" rx="1.2" fill="var(--accent)" />
-      <rect x="12" y="8" width="4" height="10" rx="1.2" fill="#fff" opacity=".9" />
-      <rect x="18" y="8" width="4" height="6" rx="1.2" fill="#fff" opacity=".5" />
-    </svg>
+    <img src="/kocsistemlogo.svg" alt="KoçSistem Logo" style={{ height: displaySize, width: 'auto', objectFit: 'contain' }} />
   );
 }
