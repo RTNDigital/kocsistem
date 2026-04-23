@@ -325,7 +325,7 @@ export function TimelineScreen() {
           <path d="M3 10h18" />
           <path d="M8 2v4M16 2v4" />
         </svg>
-        <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-.01em" }}>Timeline</span>
+        <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-.01em", color: "var(--accent)" }}>Timeline</span>
         <div style={{ flex: 1 }} />
 
         {/* Zoom controls */}

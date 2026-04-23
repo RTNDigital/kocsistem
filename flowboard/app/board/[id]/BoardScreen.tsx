@@ -116,7 +116,7 @@ export function BoardScreen({ boardId }: { boardId: string }) {
             value={board.title}
             onCommit={(v) => updateBoard.mutate({ boardId, patch: { title: v } })}
             render={(v) => (
-              <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}>{v}</span>
+              <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em", color: "var(--accent)" }}>{v}</span>
             )}
             inputStyle={{ fontSize: 15, fontWeight: 600 }}
           />

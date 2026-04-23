@@ -79,6 +79,7 @@ export function Dashboard() {
                 letterSpacing: "-.02em",
                 margin: 0,
                 lineHeight: 1.1,
+                color: "var(--accent)",
               }}
             >
               Good {greeting()}, {me?.name?.split(" ")[0] ?? "there"}.
