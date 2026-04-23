@@ -8,13 +8,14 @@ import { I, Logo } from "./Icons";
 import { useMe } from "@/hooks/useMe";
 import { useBoards } from "@/hooks/useBoards";
 import { logoutAction } from "@/app/login/actions";
-
+import { useQueryClient } from "@tanstack/react-query";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: me } = useMe();
   const { data: boards = [] } = useBoards();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const qc = useQueryClient();
 
   // ⌘B toggles sidebar
   useEffect(() => {
@@ -146,7 +147,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </button>
               )}
             >
-              <MenuItem danger onClick={() => logoutAction()}>
+              <MenuItem danger onClick={async () => {
+                qc.clear();
+                await logoutAction();
+              }}>
                 {I.logout} Sign out
               </MenuItem>
             </Menu>
