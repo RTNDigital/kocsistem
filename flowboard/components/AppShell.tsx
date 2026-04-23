@@ -15,6 +15,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: boards = [] } = useBoards();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Extract boardId when on a board page
+  const boardIdMatch = pathname.match(/^\/board\/([\w-]+)/);
+  const currentBoardId = boardIdMatch ? boardIdMatch[1] : null;
   const qc = useQueryClient();
 
   // ⌘B toggles sidebar
@@ -165,6 +169,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               active={pathname === "/"}
               onClick={() => setMobileOpen(false)}
             />
+
+            {currentBoardId && (
+              <NavButton
+                icon={I.archive}
+                label="Sprint Archive"
+                onClick={() => {
+                  setMobileOpen(false);
+                  window.dispatchEvent(
+                    new CustomEvent("open-sprint-archive", { detail: { boardId: currentBoardId } })
+                  );
+                }}
+              />
+            )}
 
             {starred.length > 0 && (
               <NavSection label="Favorites">
@@ -351,6 +368,56 @@ function NavItem({
     </Link>
   );
 }
+
+function NavButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        width: "100%",
+        padding: "5px 8px",
+        borderRadius: 6,
+        background: "transparent",
+        border: 0,
+        color: "var(--ink-2)",
+        fontSize: 12.5,
+        textAlign: "left",
+        fontWeight: 400,
+        marginBottom: 1,
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "color-mix(in oklab, var(--accent) 8%, transparent)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      <span
+        style={{
+          display: "inline-flex",
+          width: 16,
+          justifyContent: "center",
+          color: "var(--ink-4)",
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </span>
+      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {label}
+      </span>
+    </button>
+  );
+}
+
 
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (

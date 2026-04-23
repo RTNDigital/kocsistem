@@ -41,6 +41,16 @@ export function BoardScreen({ boardId }: { boardId: string }) {
     setLabelFilters([]);
   }, [boardId]);
 
+  // Listen for sidebar archive button event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { boardId: id } = (e as CustomEvent).detail;
+      if (id === boardId) setShowArchive(true);
+    };
+    window.addEventListener("open-sprint-archive", handler);
+    return () => window.removeEventListener("open-sprint-archive", handler);
+  }, [boardId]);
+
   const filteredCards = useMemo(() => {
     if (!data) return [];
     return data.cards.filter((c) => {
