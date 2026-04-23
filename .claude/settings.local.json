@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "mcp__Neon__list_projects",
-      "mcp__Neon__run_sql"
+      "mcp__Neon__run_sql",
+      "Bash(npm run *)"
     ]
   },
   "enableAllProjectMcpServers": true,

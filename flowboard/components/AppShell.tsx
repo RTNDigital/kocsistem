@@ -170,6 +170,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileOpen(false)}
             />
 
+            <NavItem
+              href="/timeline"
+              icon={I.calendar}
+              label="Timeline"
+              active={pathname === "/timeline"}
+              onClick={() => setMobileOpen(false)}
+            />
+
             {currentBoardId && (
               <NavButton
                 icon={I.archive}

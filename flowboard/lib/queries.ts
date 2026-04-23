@@ -130,8 +130,7 @@ export async function getBoardDetail(boardId: string): Promise<BoardDetail | nul
 
   return {
     board: boardRows[0] as unknown as Board,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    members: members as any,
+    members: members as BoardDetail["members"],
     columns: columnRows as unknown as BoardDetail["columns"],
     cards,
     labels: labelRows as unknown as BoardDetail["labels"],
@@ -284,6 +283,45 @@ export async function listSprintArchives(boardId: string): Promise<Sprint[]> {
     ORDER BY s.ended_at DESC
   `;
   return rows as unknown as Sprint[];
+}
+
+// ----------------------------------------------------------------------------
+// Timeline: boards with their sprints
+// ----------------------------------------------------------------------------
+export interface BoardWithSprints {
+  id: string;
+  title: string;
+  color: string;
+  starred: boolean;
+  created_at: string;
+  sprints: Sprint[];
+}
+
+export async function listBoardsWithSprints(): Promise<BoardWithSprints[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+  const rows = await db`
+    SELECT b.id, b.title, b.color, b.starred, b.created_at,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', s.id,
+            'title', s.title,
+            'sprint_number', s.sprint_number,
+            'status', s.status,
+            'started_at', s.started_at,
+            'ended_at', s.ended_at
+          ) ORDER BY s.started_at
+        ) FILTER (WHERE s.id IS NOT NULL),
+        '[]'::json
+      ) AS sprints
+    FROM boards b
+    JOIN board_members bm ON bm.board_id = b.id AND bm.user_id = ${session.user.id}
+    LEFT JOIN sprints s ON s.board_id = b.id
+    GROUP BY b.id, b.title, b.color, b.starred, b.created_at
+    ORDER BY b.created_at ASC
+  `;
+  return rows as unknown as BoardWithSprints[];
 }
 
 export async function getSprintArchiveDetail(sprintId: string): Promise<SprintArchiveDetail | null> {
