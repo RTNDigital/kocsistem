@@ -17,8 +17,8 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
   try {
     await signIn("credentials", { email, password, redirectTo: "/" });
   } catch (e) {
-    if (e instanceof AuthError) return { error: "Geçersiz e-posta veya şifre." };
-    throw e; // redirect hatalarını yeniden fırlat
+    if (e instanceof AuthError) return { error: "Invalid email or password." };
+    throw e; // re-throw redirect errors
   }
   return { error: null };
 }
@@ -28,14 +28,14 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
   const password = String(formData.get("password") ?? "");
   const name = String(formData.get("name") ?? "").trim();
 
-  if (!name) return { error: "Lütfen adınızı girin." };
-  if (password.length < 8) return { error: "Şifre en az 8 karakter olmalı." };
+  if (!name) return { error: "Please enter your name." };
+  if (password.length < 8) return { error: "Password must be at least 8 characters." };
   if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
-    return { error: "Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir." };
+    return { error: "Password must contain at least one uppercase letter, one lowercase letter, and one number." };
   }
 
   const existing = await db`SELECT id FROM users WHERE email = ${email} LIMIT 1`;
-  if (existing.length > 0) return { error: "Bu e-posta zaten kullanımda." };
+  if (existing.length > 0) return { error: "This email is already in use." };
 
   const passwordHash = await bcrypt.hash(password, 12);
 
@@ -49,7 +49,7 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
   const colors = ["#5B5BF5", "#2E7D6A", "#C84B7A", "#E6884E", "#8B5BD9", "#3E7CE0"];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  // İlk kayıt olan kullanıcı admin (Scrum Master) olur
+  // The first registered user becomes admin (Scrum Master)
   const adminCheck = await db`SELECT id FROM profiles WHERE is_admin = true LIMIT 1`;
   const isFirstAdmin = adminCheck.length === 0;
 
@@ -61,7 +61,7 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
   try {
     await signIn("credentials", { email, password, redirectTo: "/" });
   } catch (e) {
-    if (e instanceof AuthError) return { error: "Kayıt başarılı ama giriş yapılamadı. Lütfen giriş yapın." };
+    if (e instanceof AuthError) return { error: "Registration successful but login failed. Please sign in." };
     throw e;
   }
   return { error: null };

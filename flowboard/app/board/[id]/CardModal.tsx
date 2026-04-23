@@ -441,7 +441,7 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
             <Menu
               trigger={({ setOpen }) => (
                 <SideBtn icon={I.eye} onClick={() => setOpen((o) => !o)}>
-                  Gözlemciler ({card.watchers.length})
+                  Watchers ({card.watchers.length})
                 </SideBtn>
               )}
             >

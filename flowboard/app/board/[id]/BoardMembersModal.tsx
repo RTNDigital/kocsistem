@@ -64,7 +64,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
             borderBottom: "1px solid var(--line)",
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Board Üyeleri</h2>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Board Members</h2>
           <button
             onClick={onClose}
             style={{
@@ -82,7 +82,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
         <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--line)" }}>
           <input
             autoFocus
-            placeholder="Kullanıcı ara…"
+            placeholder="Search users…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -111,7 +111,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
                   marginBottom: 6,
                 }}
               >
-                Mevcut Üyeler
+                Current Members
               </div>
               {filteredMembers.map((m) => (
                 <div
@@ -138,7 +138,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
                         : "var(--ink-3)"
                     }
                   >
-                    {m.role === "owner" ? "Scrum Master" : m.role === "editor" ? "Üye" : "Gözlemci"}
+                    {m.role === "owner" ? "Scrum Master" : m.role === "editor" ? "Member" : "Observer"}
                   </Chip>
                   {m.role !== "owner" && (
                     <button
@@ -151,7 +151,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
                         padding: 4,
                         borderRadius: 4,
                       }}
-                      title="Üyeyi çıkar"
+                      title="Remove member"
                     >
                       {I.x}
                     </button>
@@ -173,7 +173,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
                   marginBottom: 6,
                 }}
               >
-                Eklenebilir Kullanıcılar
+                Available Users
               </div>
               {nonMembers.map((p) => (
                 <div
@@ -197,7 +197,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
                     onClick={() => addMember.mutate({ userId: p.id, role: "editor" })}
                     disabled={addMember.isPending}
                   >
-                    {I.plus} Ekle
+                    {I.plus} Add
                   </Button>
                 </div>
               ))}
@@ -208,7 +208,7 @@ export function BoardMembersModal({ boardId, members, onClose }: Props) {
             <div
               style={{ padding: 24, textAlign: "center", fontSize: 13, color: "var(--ink-4)" }}
             >
-              Kullanıcı bulunamadı.
+              No users found.
             </div>
           )}
         </div>

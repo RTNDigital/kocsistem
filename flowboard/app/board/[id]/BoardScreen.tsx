@@ -119,19 +119,19 @@ export function BoardScreen({ boardId }: { boardId: string }) {
           {me?.is_admin && (
             <>
               <Button size="sm" variant="default" onClick={() => setManagingMembers(true)}>
-                {I.users} Üyeler
+                {I.users} Members
               </Button>
               <Button
                 size="sm"
                 variant="danger"
                 onClick={() => {
-                  if (confirm("Bu panoyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+                  if (confirm("Are you sure you want to delete this board? This action cannot be undone.")) {
                     deleteBoard.mutate(boardId, {
                       onSuccess: () => router.push("/")
                     });
                   }
                 }}
-                title="Panoyu Sil"
+                title="Delete Board"
               >
                 {I.trash}
               </Button>

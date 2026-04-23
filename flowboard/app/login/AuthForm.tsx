@@ -114,7 +114,7 @@ export function AuthForm({ mode }: Props) {
                     justifyContent: "center",
                     padding: 4,
                   }}
-                  title={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? I.eyeOff : I.eye}
                 </button>
