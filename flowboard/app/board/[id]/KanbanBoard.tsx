@@ -181,11 +181,15 @@ export function KanbanBoard({
         }
 
         // Dropped on a column drop zone (empty area)
-        const colDrop = targets.map((t) => parseData(t.data)).find(isColDropData);
-        if (colDrop) {
+        const rawColDropTarget = targets.find((t) => parseData(t.data)?.type === "column-drop");
+        if (rawColDropTarget) {
+          const colDrop = parseData(rawColDropTarget.data);
+          if (!isColDropData(colDrop)) return;
           const toColumnId = colDrop.colId;
           const list = (cardsByColumn.get(toColumnId) ?? []).filter((c) => c.id !== src.cardId);
-          moveCard.mutate({ cardId: src.cardId, toColumnId, toIndex: list.length, actorId });
+          const colEdge = extractClosestEdge(rawColDropTarget.data);
+          const toIndex = colEdge === "top" ? 0 : list.length;
+          moveCard.mutate({ cardId: src.cardId, toColumnId, toIndex, actorId });
         }
       },
     });
@@ -290,7 +294,10 @@ function ColumnView({
               { input, element, allowedEdges: ["left", "right"] }
             );
           }
-          return rec({ type: "column-drop" as const, colId: col.id });
+          return attachClosestEdge(
+            rec({ type: "column-drop" as const, colId: col.id }),
+            { input, element, allowedEdges: ["top", "bottom"] }
+          );
         },
         onDragEnter: ({ source, self }) => {
           const d = parseData(source.data);
