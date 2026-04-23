@@ -18,6 +18,9 @@ import {
   toggleCardLabel,
   toggleCardAssignee,
   toggleCardWatcher,
+  addLabel,
+  updateLabel,
+  deleteLabel,
 } from "@/lib/mutations";
 import type { BoardDetail, Card, Column } from "@/types/domain";
 import type { CardPriority } from "@/types/database";
@@ -373,5 +376,33 @@ export function useToggleCardWatcher(boardId: string) {
       qc.invalidateQueries({ queryKey: key(boardId) });
       qc.invalidateQueries({ queryKey: ["card", vars.cardId] });
     },
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Board Labels
+// ----------------------------------------------------------------------------
+export function useAddLabel(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { name: string; color: string }) => addLabel({ boardId, ...args }),
+    onSettled: () => qc.invalidateQueries({ queryKey: key(boardId) }),
+  });
+}
+
+export function useUpdateLabel(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ labelId, patch }: { labelId: string; patch: { name?: string; color?: string } }) =>
+      updateLabel(labelId, patch),
+    onSettled: () => qc.invalidateQueries({ queryKey: key(boardId) }),
+  });
+}
+
+export function useDeleteLabel(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (labelId: string) => deleteLabel(labelId),
+    onSettled: () => qc.invalidateQueries({ queryKey: key(boardId) }),
   });
 }

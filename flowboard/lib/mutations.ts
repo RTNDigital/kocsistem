@@ -330,6 +330,7 @@ export async function addComment(args: {
 }
 
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // Labels
 // ----------------------------------------------------------------------------
 export async function addLabel(args: {
@@ -342,4 +343,20 @@ export async function addLabel(args: {
     INSERT INTO labels (board_id, name, color)
     VALUES (${args.boardId}, ${args.name}, ${args.color})
   `;
+}
+
+export async function updateLabel(
+  labelId: string,
+  patch: { name?: string; color?: string }
+) {
+  await requireUser();
+  if (patch.name !== undefined)
+    await db`UPDATE labels SET name = ${patch.name} WHERE id = ${labelId}`;
+  if (patch.color !== undefined)
+    await db`UPDATE labels SET color = ${patch.color} WHERE id = ${labelId}`;
+}
+
+export async function deleteLabel(labelId: string) {
+  await requireUser();
+  await db`DELETE FROM labels WHERE id = ${labelId}`;
 }
