@@ -12,6 +12,7 @@ import type {
   Sprint,
   SprintArchivedCard,
   SprintArchiveDetail,
+  ListCard,
 } from "@/types/domain";
 
 // ----------------------------------------------------------------------------
@@ -324,6 +325,82 @@ export async function listBoardsWithSprints(): Promise<BoardWithSprints[]> {
     ORDER BY b.created_at ASC
   `;
   return rows as unknown as BoardWithSprints[];
+}
+
+// ----------------------------------------------------------------------------
+// List view: all cards across accessible boards
+// ----------------------------------------------------------------------------
+export async function listAllCards(): Promise<ListCard[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const rows = await db`
+    SELECT
+      c.*,
+      b.title  AS board_title,
+      b.color  AS board_color,
+      col.title AS column_title,
+      COALESCE(
+        json_agg(DISTINCT cl.label_id) FILTER (WHERE cl.label_id IS NOT NULL), '[]'
+      ) AS label_ids,
+      COALESCE(
+        jsonb_agg(
+          DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color)
+        ) FILTER (WHERE l.id IS NOT NULL), '[]'
+      ) AS label_objects,
+      COALESCE(
+        json_agg(DISTINCT ca.user_id) FILTER (WHERE ca.user_id IS NOT NULL), '[]'
+      ) AS assignee_ids,
+      COALESCE(
+        jsonb_agg(
+          DISTINCT jsonb_build_object('id', p.id, 'name', p.name, 'initials', p.initials, 'color', p.color)
+        ) FILTER (WHERE p.id IS NOT NULL), '[]'
+      ) AS assignee_profiles,
+      COALESCE(
+        json_agg(DISTINCT cw.user_id) FILTER (WHERE cw.user_id IS NOT NULL), '[]'
+      ) AS watcher_ids,
+      COUNT(DISTINCT ci.id)                               AS checklist_count,
+      COUNT(DISTINCT ci.id) FILTER (WHERE ci.done = true) AS checklist_done,
+      COUNT(DISTINCT co.id)                               AS comment_count
+    FROM cards c
+    JOIN board_members bm  ON bm.board_id = c.board_id AND bm.user_id = ${session.user.id}
+    JOIN boards b           ON b.id = c.board_id
+    JOIN columns col        ON col.id = c.column_id
+    LEFT JOIN card_labels   cl ON cl.card_id  = c.id
+    LEFT JOIN labels        l  ON l.id        = cl.label_id
+    LEFT JOIN card_assignees ca ON ca.card_id = c.id
+    LEFT JOIN profiles      p  ON p.id        = ca.user_id
+    LEFT JOIN card_watchers cw ON cw.card_id  = c.id
+    LEFT JOIN checklist_items ci ON ci.card_id = c.id
+    LEFT JOIN comments      co ON co.card_id  = c.id
+    GROUP BY c.id, b.title, b.color, col.title
+    ORDER BY c.created_at DESC
+  `;
+
+  return rows.map((c) => ({
+    id:              c.id as string,
+    board_id:        c.board_id as string,
+    column_id:       c.column_id as string,
+    title:           c.title as string,
+    description:     c.description as string,
+    priority:        c.priority as Card["priority"],
+    due_at:          c.due_at as string | null,
+    position:        c.position as string,
+    start_at:        c.start_at as string | null,
+    created_by:      c.created_by as string | null,
+    created_at:      c.created_at as string,
+    labels:          (c.label_ids as string[]) ?? [],
+    assignees:       (c.assignee_ids as string[]) ?? [],
+    watchers:        (c.watcher_ids as string[]) ?? [],
+    checklist_count: Number(c.checklist_count),
+    checklist_done:  Number(c.checklist_done),
+    comment_count:   Number(c.comment_count),
+    board_title:     c.board_title as string,
+    board_color:     c.board_color as string,
+    column_title:    c.column_title as string,
+    label_objects:   (c.label_objects as ListCard["label_objects"]) ?? [],
+    assignee_profiles: (c.assignee_profiles as ListCard["assignee_profiles"]) ?? [],
+  }));
 }
 
 export async function getSprintArchiveDetail(sprintId: string): Promise<SprintArchiveDetail | null> {

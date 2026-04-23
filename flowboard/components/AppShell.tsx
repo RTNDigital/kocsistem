@@ -193,6 +193,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileOpen(false)}
             />
 
+            <NavItem
+              href="/list"
+              icon={I.list}
+              label="List view"
+              active={pathname === "/list"}
+              onClick={() => setMobileOpen(false)}
+            />
+
             {!currentBoardId ? (
               <Menu
                 align="start"

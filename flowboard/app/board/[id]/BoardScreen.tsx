@@ -9,9 +9,14 @@ import { useMe } from "@/hooks/useMe";
 import { useBoard, useUpdateColumn, useActiveSprint, useStartSprint, useCompleteSprint } from "@/hooks/useBoard";
 import { useUpdateBoard, useDeleteBoard } from "@/hooks/useBoards";
 import { KanbanBoard } from "./KanbanBoard";
+import { BoardListView } from "./BoardListView";
 import { CardModal } from "./CardModal";
 import { BoardMembersModal } from "./BoardMembersModal";
 import { BoardLabelsModal } from "./BoardLabelsModal";
+
+type ViewMode = "kanban" | "list";
+type Priority = "high" | "med" | "low";
+
 export function BoardScreen({ boardId }: { boardId: string }) {
   const router = useRouter();
   const { data: me } = useMe();
@@ -20,8 +25,11 @@ export function BoardScreen({ boardId }: { boardId: string }) {
   const updateBoard = useUpdateBoard();
   const deleteBoard = useDeleteBoard();
   const updateColumn = useUpdateColumn(boardId);
+
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [query, setQuery] = useState("");
   const [labelFilters, setLabelFilters] = useState<string[]>([]);
+  const [priorityFilters, setPriorityFilters] = useState<Priority[]>([]);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [managingMembers, setManagingMembers] = useState(false);
   const [managingLabels, setManagingLabels] = useState(false);
@@ -36,7 +44,13 @@ export function BoardScreen({ boardId }: { boardId: string }) {
   useEffect(() => {
     setQuery("");
     setLabelFilters([]);
+    setPriorityFilters([]);
   }, [boardId]);
+
+  const togglePriority = (p: Priority) =>
+    setPriorityFilters((prev) =>
+      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]
+    );
 
   const filteredCards = useMemo(() => {
     if (!data) return [];
@@ -47,9 +61,10 @@ export function BoardScreen({ boardId }: { boardId: string }) {
       )
         return false;
       if (labelFilters.length && !c.labels.some((l) => labelFilters.includes(l))) return false;
+      if (priorityFilters.length && !priorityFilters.includes((c.priority ?? "") as Priority)) return false;
       return true;
     });
-  }, [data, query, labelFilters]);
+  }, [data, query, labelFilters, priorityFilters]);
 
   if (isLoading) {
     return (
@@ -199,7 +214,7 @@ export function BoardScreen({ boardId }: { boardId: string }) {
         </div>
       </div>
 
-      {/* Filter bar */}
+      {/* Filter + view-switcher bar */}
       <div
         style={{
           display: "flex",
@@ -211,6 +226,25 @@ export function BoardScreen({ boardId }: { boardId: string }) {
           flexWrap: "wrap",
         }}
       >
+        {/* View tabs */}
+        <div style={{ display: "inline-flex", background: "var(--surface-2)", borderRadius: 8, padding: 2, flexShrink: 0 }}>
+          <ViewTab active={viewMode === "kanban"} onClick={() => setViewMode("kanban")}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="5" height="18" rx="1.5" />
+              <rect x="10" y="3" width="5" height="12" rx="1.5" />
+              <rect x="17" y="3" width="5" height="15" rx="1.5" />
+            </svg>
+            Kanban
+          </ViewTab>
+          <ViewTab active={viewMode === "list"} onClick={() => setViewMode("list")}>
+            {I.list}
+            List
+          </ViewTab>
+        </div>
+
+        <div style={{ width: 1, height: 20, background: "var(--line)", flexShrink: 0 }} />
+
+        {/* Search */}
         <div style={{ position: "relative" }}>
           <span
             style={{
@@ -228,10 +262,28 @@ export function BoardScreen({ boardId }: { boardId: string }) {
             placeholder="Search cards"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            style={{ paddingLeft: 32, width: 220 }}
+            style={{ paddingLeft: 32, width: 200 }}
           />
         </div>
+
+        {/* Label filter */}
         <LabelFilter labels={labels} value={labelFilters} onChange={setLabelFilters} />
+
+        {/* Priority filter */}
+        <PriorityFilter value={priorityFilters} onChange={setPriorityFilters} onToggle={togglePriority} />
+
+        {/* Active filter chips */}
+        {(labelFilters.length > 0 || priorityFilters.length > 0 || query) && (
+          <button
+            onClick={() => { setQuery(""); setLabelFilters([]); setPriorityFilters([]); }}
+            style={{
+              background: "transparent", border: "none", cursor: "pointer",
+              fontSize: 11.5, color: "var(--ink-4)", textDecoration: "underline", padding: "0 2px",
+            }}
+          >
+            Clear all
+          </button>
+        )}
 
         <div
           style={{
@@ -245,21 +297,32 @@ export function BoardScreen({ boardId }: { boardId: string }) {
           className="hide-on-mobile"
         >
           <span>
-            {data.cards.length} cards · {columns.length} columns
+            {filteredCards.length}{filteredCards.length !== data.cards.length ? `/${data.cards.length}` : ""} cards
+            {viewMode === "kanban" && ` · ${columns.length} columns`}
           </span>
         </div>
       </div>
 
-      <KanbanBoard
-        boardId={boardId}
-        columns={columns}
-        cards={filteredCards}
-        labels={labels}
-        users={memberProfiles}
-        actorId={me?.id ?? ""}
-        onUpdateColumn={(colId, patch) => updateColumn.mutate({ colId, patch })}
-        onOpenCard={setOpenCardId}
-      />
+      {viewMode === "kanban" ? (
+        <KanbanBoard
+          boardId={boardId}
+          columns={columns}
+          cards={filteredCards}
+          labels={labels}
+          users={memberProfiles}
+          actorId={me?.id ?? ""}
+          onUpdateColumn={(colId, patch) => updateColumn.mutate({ colId, patch })}
+          onOpenCard={setOpenCardId}
+        />
+      ) : (
+        <BoardListView
+          cards={filteredCards}
+          columns={columns}
+          labels={labels}
+          users={memberProfiles}
+          onOpenCard={setOpenCardId}
+        />
+      )}
 
       {openCardId && (
         <CardModal
@@ -402,6 +465,93 @@ function StartSprintDialog({
         </div>
       </div>
     </>
+  );
+}
+
+function ViewTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 5,
+        border: 0, cursor: "pointer", padding: "4px 9px", borderRadius: 6,
+        background: active ? "var(--surface)" : "transparent",
+        boxShadow: active ? "var(--shadow-sm)" : "none",
+        fontSize: 12, fontWeight: active ? 500 : 400,
+        color: active ? "var(--ink)" : "var(--ink-3)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+const PRIORITIES: { value: Priority; label: string; color: string }[] = [
+  { value: "high", label: "High",   color: "var(--err)" },
+  { value: "med",  label: "Medium", color: "var(--warn)" },
+  { value: "low",  label: "Low",    color: "var(--ok)" },
+];
+
+function PriorityFilter({
+  value,
+  onChange,
+  onToggle,
+}: {
+  value: Priority[];
+  onChange: (v: Priority[]) => void;
+  onToggle: (p: Priority) => void;
+}) {
+  return (
+    <Menu
+      trigger={({ setOpen }) => (
+        <Button size="sm" variant="default" onClick={() => setOpen((o) => !o)}>
+          {I.flag}
+          Priority{" "}
+          {value.length > 0 && (
+            <Chip color="var(--accent)" style={{ marginLeft: 4 }}>
+              {value.length}
+            </Chip>
+          )}
+        </Button>
+      )}
+    >
+      <div style={{ padding: "4px", minWidth: 160 }}>
+        {PRIORITIES.map(({ value: p, label, color }) => {
+          const on = value.includes(p);
+          return (
+            <button
+              key={p}
+              onClick={(e) => { e.stopPropagation(); onToggle(p); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                width: "100%", textAlign: "left", padding: "6px 8px",
+                borderRadius: 6, border: 0,
+                background: on ? "var(--surface-2)" : "transparent",
+                fontSize: 13, cursor: "pointer", color: "var(--ink)",
+              }}
+            >
+              <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{label}</span>
+              {on && <span style={{ color: "var(--accent)" }}>{I.check}</span>}
+            </button>
+          );
+        })}
+        {value.length > 0 && (
+          <>
+            <div style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
+            <MenuItem onClick={() => onChange([])}>Clear</MenuItem>
+          </>
+        )}
+      </div>
+    </Menu>
   );
 }
 

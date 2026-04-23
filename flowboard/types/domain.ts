@@ -51,3 +51,11 @@ export interface SprintArchiveDetail {
   sprint: Sprint;
   cards: SprintArchivedCard[];
 }
+
+export interface ListCard extends Card {
+  board_title: string;
+  board_color: string;
+  column_title: string;
+  label_objects: { id: string; name: string; color: string }[];
+  assignee_profiles: { id: string; name: string; initials: string; color: string }[];
+}
