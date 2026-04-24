@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // "standalone" output is only for Docker/Coolify — Vercel doesn't support it
   ...(process.env.STANDALONE === "true" ? { output: "standalone" as const } : {}),
+  serverExternalPackages: ["@aws-sdk/client-s3"],
   reactStrictMode: true,
   experimental: {
     typedRoutes: true,
