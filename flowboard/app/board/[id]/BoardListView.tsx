@@ -200,7 +200,7 @@ export function BoardListView({ boardId, cards, columns, labels, users, actorId,
   );
 
   const sortedCards = useMemo(
-    () => [...cards].sort((a, b) => a.position.localeCompare(b.position)),
+    () => [...cards].sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0),
     [cards]
   );
 
@@ -247,7 +247,7 @@ export function BoardListView({ boardId, cards, columns, labels, users, actorId,
         const toColumnId = targetCard.column_id;
         const siblingsInTargetCol = cards
           .filter((c) => c.column_id === toColumnId)
-          .sort((a, b) => a.position.localeCompare(b.position));
+          .sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0);
 
         const edge = extractClosestEdge(targets[0].data);
         const targetIdx = siblingsInTargetCol.findIndex((c) => c.id === targetData.cardId);

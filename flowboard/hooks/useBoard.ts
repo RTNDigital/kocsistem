@@ -151,7 +151,7 @@ export function useMoveCard(boardId: string) {
         }
         args.siblingsExcludingMoved = prev.cards
           .filter((c) => c.column_id === args.toColumnId && c.id !== args.cardId)
-          .sort((a, b) => a.position.localeCompare(b.position))
+          .sort((a, b) => (a.position < b.position ? -1 : a.position > b.position ? 1 : 0))
           .map((c) => c.position);
       }
 
@@ -162,7 +162,7 @@ export function useMoveCard(boardId: string) {
 
       const siblings = prev.cards
         .filter((c) => c.column_id === args.toColumnId && c.id !== args.cardId)
-        .sort((a, b) => a.position.localeCompare(b.position))
+        .sort((a, b) => (a.position < b.position ? -1 : a.position > b.position ? 1 : 0))
         .map((c) => c.position);
 
       let optimisticPos: string;
@@ -262,7 +262,7 @@ export function useMoveColumn(boardId: string) {
       if (!detail) throw new Error("Board not loaded");
       const others = detail.columns
         .filter((c) => c.id !== args.colId)
-        .sort((a, b) => a.position.localeCompare(b.position))
+        .sort((a, b) => (a.position < b.position ? -1 : a.position > b.position ? 1 : 0))
         .map((c) => c.position);
       const newPosition = positionForIndex(others, args.toIndex);
       return moveColumn({ colId: args.colId, newPosition });
@@ -273,7 +273,7 @@ export function useMoveColumn(boardId: string) {
       if (!prev) return { prev };
       const others = prev.columns
         .filter((c) => c.id !== args.colId)
-        .sort((a, b) => a.position.localeCompare(b.position))
+        .sort((a, b) => (a.position < b.position ? -1 : a.position > b.position ? 1 : 0))
         .map((c) => c.position);
       let pos: string;
       try {

@@ -596,7 +596,7 @@ export async function completeSprint(args: {
       (SELECT COUNT(*)::int FROM comments co WHERE co.card_id = c.id) AS comment_total
     FROM cards c
     WHERE c.column_id = ${doneColId} AND c.board_id = ${args.boardId}
-    ORDER BY c.position
+    ORDER BY c.position COLLATE "C"
   `;
 
   // Insert snapshot rows

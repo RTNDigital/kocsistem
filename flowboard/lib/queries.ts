@@ -61,7 +61,7 @@ export async function getBoardDetail(boardId: string): Promise<BoardDetail | nul
       JOIN profiles p ON p.id = bm.user_id
       WHERE bm.board_id = ${boardId}
     `,
-    db`SELECT * FROM columns WHERE board_id = ${boardId} ORDER BY position`,
+    db`SELECT * FROM columns WHERE board_id = ${boardId} ORDER BY position COLLATE "C"`,
     db`
       SELECT c.*,
         COALESCE(
@@ -84,7 +84,7 @@ export async function getBoardDetail(boardId: string): Promise<BoardDetail | nul
       LEFT JOIN comments co ON co.card_id = c.id
       WHERE c.board_id = ${boardId}
       GROUP BY c.id
-      ORDER BY c.position
+      ORDER BY c.position COLLATE "C"
     `,
     db`SELECT * FROM labels WHERE board_id = ${boardId} ORDER BY name`,
   ]);
@@ -164,7 +164,7 @@ export async function getCardDetail(cardId: string): Promise<CardDetail | null> 
       JOIN card_watchers cw ON cw.user_id = p.id
       WHERE cw.card_id = ${cardId}
     `,
-    db`SELECT * FROM checklist_items WHERE card_id = ${cardId} ORDER BY position`,
+    db`SELECT * FROM checklist_items WHERE card_id = ${cardId} ORDER BY position COLLATE "C"`,
     db`
       SELECT c.*, p.id as a_id, p.name as a_name, p.email as a_email,
              p.initials as a_initials, p.color as a_color, p.created_at as a_created_at

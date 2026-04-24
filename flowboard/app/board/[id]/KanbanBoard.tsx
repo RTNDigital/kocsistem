@@ -93,7 +93,7 @@ export function KanbanBoard({
   const deleteColumn = useDeleteColumn(boardId);
 
   const columns = useMemo(
-    () => [...columnsRaw].sort((a, b) => a.position.localeCompare(b.position)),
+    () => [...columnsRaw].sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0),
     [columnsRaw]
   );
 
@@ -105,7 +105,7 @@ export function KanbanBoard({
       if (arr) arr.push(c);
     }
     for (const arr of map.values()) {
-      arr.sort((a, b) => a.position.localeCompare(b.position));
+      arr.sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0);
     }
     return map;
   }, [columns, cards]);
