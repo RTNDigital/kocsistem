@@ -16,7 +16,7 @@ export function KaiChat({ open, onClose }: { open: boolean; onClose: () => void 
     {
       id: "welcome",
       role: "model",
-      text: "Merhaba! 👋 Ben **KAI**, FlowBoard asistanınım. Board'larınız hakkında sorular sorabilir, task oluşturabilir veya uygulama hakkında bilgi alabilirsiniz.\n\nSize nasıl yardımcı olabilirim?",
+      text: "Hello! 👋 I'm **KAI**, your FlowBoard assistant. You can ask me questions about your boards, create tasks, or get information about the application.\n\nHow can I help you?",
       timestamp: new Date(),
     },
   ]);
@@ -112,7 +112,7 @@ export function KaiChat({ open, onClose }: { open: boolean; onClose: () => void 
         {
           id: crypto.randomUUID(),
           role: "model",
-          text: "⚠️ Bağlantı hatası. Lütfen tekrar deneyin.",
+          text: "⚠️ Connection error. Please try again.",
           timestamp: new Date(),
         },
       ]);
@@ -142,7 +142,7 @@ export function KaiChat({ open, onClose }: { open: boolean; onClose: () => void 
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-.02em" }}>KAI</div>
               <div style={{ fontSize: 11, color: "var(--ink-4)", fontWeight: 400 }}>
-                FlowBoard Asistan
+                FlowBoard Assistant
               </div>
             </div>
           </div>
@@ -173,7 +173,7 @@ export function KaiChat({ open, onClose }: { open: boolean; onClose: () => void 
                   dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }}
                 />
                 <div className="kai-msg-time">
-                  {msg.timestamp.toLocaleTimeString("tr-TR", {
+                  {msg.timestamp.toLocaleTimeString("en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -206,7 +206,7 @@ export function KaiChat({ open, onClose }: { open: boolean; onClose: () => void 
             ref={inputRef}
             type="text"
             className="kai-input"
-            placeholder="KAI'ya bir şey sor..."
+            placeholder="Ask KAI something..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -221,7 +221,7 @@ export function KaiChat({ open, onClose }: { open: boolean; onClose: () => void 
             className="kai-send"
             onClick={sendMessage}
             disabled={!input.trim() || loading}
-            aria-label="Gönder"
+            aria-label="Send"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 2L11 13" />

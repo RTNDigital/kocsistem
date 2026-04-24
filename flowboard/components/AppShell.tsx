@@ -212,7 +212,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <NavButton
               icon={I.kai}
-              label="KAI Asistan"
+              label="KAI Assistant"
               onClick={() => {
                 setMobileOpen(false);
                 setKaiOpen(true);

@@ -16,22 +16,22 @@ const tools: FunctionDeclaration[] = [
   {
     name: "create_task",
     description:
-      "Kullanıcının belirttiği board ve kolonda yeni bir task/kart oluşturur. " +
-      "Eğer kullanıcı kolon belirtmezse ilk kolonu ('To do') kullan.",
+      "Creates a new task/card in the specified board and column. " +
+      "If the user does not specify a column, use the first column ('To do').",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
         board_id: {
           type: SchemaType.STRING,
-          description: "Task'ın oluşturulacağı board ID",
+          description: "The board ID where the task will be created",
         },
         column_id: {
           type: SchemaType.STRING,
-          description: "Task'ın oluşturulacağı kolon ID (opsiyonel, verilmezse ilk kolon)",
+          description: "The column ID where the task will be created (optional, defaults to first column)",
         },
         title: {
           type: SchemaType.STRING,
-          description: "Task başlığı",
+          description: "The task title",
         },
       },
       required: ["board_id", "title"],
@@ -39,7 +39,7 @@ const tools: FunctionDeclaration[] = [
   },
   {
     name: "list_boards",
-    description: "Kullanıcının erişebildiği tüm boardları listeler.",
+    description: "Lists all boards the user has access to.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {},
@@ -47,13 +47,13 @@ const tools: FunctionDeclaration[] = [
   },
   {
     name: "list_columns",
-    description: "Belirli bir board'daki kolonları (sütunları) listeler.",
+    description: "Lists the columns in a specific board.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
         board_id: {
           type: SchemaType.STRING,
-          description: "Kolonları listelenecek board ID",
+          description: "The board ID to list columns for",
         },
       },
       required: ["board_id"],
@@ -61,13 +61,13 @@ const tools: FunctionDeclaration[] = [
   },
   {
     name: "list_tasks",
-    description: "Belirli bir board'daki tüm task/kartları listeler.",
+    description: "Lists all tasks/cards in a specific board.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
         board_id: {
           type: SchemaType.STRING,
-          description: "Taskları listelenecek board ID",
+          description: "The board ID to list tasks for",
         },
       },
       required: ["board_id"],
@@ -96,58 +96,58 @@ function buildSystemPrompt(
       .join("\n");
     activeCtx = `
 
-Kullanıcının şu an aktif olarak baktığı board:
+The user is currently viewing this board:
   Board: "${activeBoardContext.board.title}" (ID: ${activeBoardContext.board.id})
-  Kolonlar:
+  Columns:
 ${cols}
-  Toplam kart sayısı: ${activeBoardContext.cardCount}`;
+  Total card count: ${activeBoardContext.cardCount}`;
   }
 
-  return `Sen KAI adında bir AI asistansın. KoçSistem FlowBoard uygulamasının akıllı yardımcısısın.
+  return `You are an AI assistant named KAI. You are the intelligent assistant for the KoçSistem FlowBoard application.
 
-## Kim Olduğun
-- Adın: KAI (Koç AI)
-- Rolün: FlowBoard proje yönetim uygulamasının asistanı
-- İletişim dilin: Kullanıcı hangi dilde yazıyorsa o dilde cevap ver (genellikle Türkçe)
+## Who You Are
+- Name: KAI (Koç AI)
+- Role: Assistant for the FlowBoard project management application
+- Communication language: Always respond in English
 
-## FlowBoard Hakkında
-FlowBoard, Kanban tabanlı bir proje yönetim aracıdır. Temel özellikler:
-- **Boardlar**: Projeleri temsil eder, her boardda kolonlar ve kartlar bulunur
-- **Kolonlar**: "To do", "In progress", "Done" gibi iş akışı aşamaları
-- **Kartlar/Tasklar**: Yapılacak iş birimleri. Her kart şunlara sahip olabilir:
-  - Başlık ve açıklama (zengin metin)
-  - Öncelik (urgent, high, medium, low)
-  - Etiketler (labels)
-  - Atananlar (assignees) — her task'a tek kişi atanır
-  - İzleyiciler (watchers)
-  - Başlangıç ve bitiş tarihleri
-  - Kontrol listesi (checklist)
-  - Yorumlar (attachments destekli)
+## About FlowBoard
+FlowBoard is a Kanban-based project management tool. Key features:
+- **Boards**: Represent projects, each board contains columns and cards
+- **Columns**: Workflow stages like "To do", "In progress", "Done"
+- **Cards/Tasks**: Units of work. Each card can have:
+  - Title and description (rich text)
+  - Priority (urgent, high, medium, low)
+  - Labels
+  - Assignees — each task can be assigned to one person
+  - Watchers
+  - Start and due dates
+  - Checklist
+  - Comments (with attachment support)
   - Story points
-- **Sprintler**: Board bazlı sprint yönetimi ve arşivleme
-- **Timeline**: Gantt benzeri proje zaman çizelgesi
-- **Leaderboard**: Story points bazlı liderlik tablosu
-- **List View**: Tüm boardlardaki kartları tek listede görme
+- **Sprints**: Board-level sprint management and archiving
+- **Timeline**: Gantt-like project timeline view
+- **Leaderboard**: Story points-based leaderboard
+- **List View**: View all cards across boards in a single list
 
-## Kullanıcı Bilgisi
-Kullanıcı adı: ${userName}
-Erişebildiği boardlar:
+## User Information
+Username: ${userName}
+Accessible boards:
 ${boardList}${activeCtx}
 
-## Yapabileceklerin
-1. FlowBoard hakkında soruları cevapla
-2. Board ve kolonları listele
-3. Task oluştur (create_task fonksiyonunu kullan)
-4. Board'daki taskları listele
-5. Uygulama kullanımı hakkında rehberlik et
+## Your Capabilities
+1. Answer questions about FlowBoard
+2. List boards and columns
+3. Create tasks (use the create_task function)
+4. List tasks in a board
+5. Provide guidance on using the application
 
-## Kurallar
-- Sadece FlowBoard ile ilgili konularda yardım et
-- FlowBoard dışı konularda: "Ben FlowBoard asistanıyım, sadece uygulama ile ilgili konularda yardımcı olabilirim." de
-- Task oluştururken kullanıcıdan board ve başlık bilgisini al
-- Eğer kullanıcı hangi board'u kastettiğini belirtmezse ve aktif board varsa, o board'u kullan
-- Kısa, net ve yardımsever cevaplar ver
-- Emoji kullanabilirsin ama abartma`;
+## Rules
+- Only help with FlowBoard-related topics
+- For non-FlowBoard topics, say: "I'm the FlowBoard assistant — I can only help with application-related topics."
+- When creating tasks, get the board and title information from the user
+- If the user doesn't specify which board they mean and there is an active board, use that board
+- Give short, clear, and helpful responses
+- You may use emojis but don't overdo it`;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,7 +166,7 @@ async function executeFunction(
         WHERE bm.user_id = ${userId}
         ORDER BY b.created_at DESC
       `;
-      if (rows.length === 0) return JSON.stringify({ boards: [], message: "Hiç board bulunamadı." });
+      if (rows.length === 0) return JSON.stringify({ boards: [], message: "No boards found." });
       return JSON.stringify({
         boards: rows.map((r) => ({ id: r.id, title: r.title, color: r.color })),
       });
@@ -212,7 +212,7 @@ async function executeFunction(
           ORDER BY position
           LIMIT 1
         `;
-        if (cols.length === 0) return JSON.stringify({ error: "Board'da kolon bulunamadı." });
+        if (cols.length === 0) return JSON.stringify({ error: "No columns found in this board." });
         columnId = cols[0].id as string;
       }
 
@@ -245,7 +245,7 @@ async function executeFunction(
     }
 
     default:
-      return JSON.stringify({ error: "Bilinmeyen fonksiyon" });
+      return JSON.stringify({ error: "Unknown function" });
   }
 }
 
@@ -296,17 +296,21 @@ export async function POST(req: NextRequest) {
     } | null = null;
 
     if (activeBoardId) {
-      const [boardInfo, colInfo, cardCountInfo] = await Promise.all([
-        db`SELECT id, title FROM boards WHERE id = ${activeBoardId}`,
-        db`SELECT id, title FROM columns WHERE board_id = ${activeBoardId} ORDER BY position`,
-        db`SELECT COUNT(*)::int AS cnt FROM cards WHERE board_id = ${activeBoardId}`,
-      ]);
-      if (boardInfo.length > 0) {
-        activeBoardContext = {
-          board: { id: boardInfo[0].id as string, title: boardInfo[0].title as string },
-          columns: colInfo.map((c) => ({ id: c.id as string, title: c.title as string })),
-          cardCount: Number(cardCountInfo[0]?.cnt ?? 0),
-        };
+      try {
+        const [boardInfo, colInfo, cardCountInfo] = await Promise.all([
+          db`SELECT id, title FROM boards WHERE id = ${activeBoardId}`,
+          db`SELECT id, title FROM columns WHERE board_id = ${activeBoardId} ORDER BY position`,
+          db`SELECT COUNT(*)::int AS cnt FROM cards WHERE board_id = ${activeBoardId}`,
+        ]);
+        if (boardInfo.length > 0) {
+          activeBoardContext = {
+            board: { id: boardInfo[0].id as string, title: boardInfo[0].title as string },
+            columns: colInfo.map((c) => ({ id: c.id as string, title: c.title as string })),
+            cardCount: Number(cardCountInfo[0]?.cnt ?? 0),
+          };
+        }
+      } catch (dbErr) {
+        console.error("[KAI] DB error fetching board context:", dbErr);
       }
     }
 
@@ -314,43 +318,51 @@ export async function POST(req: NextRequest) {
 
     // Build Gemini model
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.0-flash-lite",
       systemInstruction: systemPrompt,
       tools: [{ functionDeclarations: tools }],
     });
 
-    // Convert message history
-    const history = messages.slice(0, -1).map((m) => ({
-      role: m.role === "user" ? "user" as const : "model" as const,
-      parts: [{ text: m.text }],
-    }));
+    // Convert message history - filter out any empty or invalid entries
+    const history = messages.slice(0, -1)
+      .filter((m) => m.text && m.text.trim())
+      .map((m) => ({
+        role: m.role === "user" ? "user" as const : "model" as const,
+        parts: [{ text: m.text }],
+      }));
 
     const chat = model.startChat({ history });
 
     const lastMessage = messages[messages.length - 1].text;
-    let response = await chat.sendMessage(lastMessage);
+    let result = await chat.sendMessage(lastMessage);
 
     // Handle function calls (loop for multi-step)
     let maxIterations = 5;
     while (maxIterations > 0) {
-      const candidate = response.response.candidates?.[0];
+      const candidate = result.response.candidates?.[0];
       const parts = candidate?.content?.parts ?? [];
-      const fnCall = parts.find((p) => p.functionCall);
+      const fnCallPart = parts.find((p) => p.functionCall);
 
-      if (!fnCall?.functionCall) break;
+      if (!fnCallPart?.functionCall) break;
 
-      const { name, args } = fnCall.functionCall;
-      const result = await executeFunction(
-        name,
-        (args as Record<string, string>) ?? {},
-        userId,
-      );
+      const fnName = fnCallPart.functionCall.name;
+      const fnArgs = (fnCallPart.functionCall.args as Record<string, string>) ?? {};
 
-      response = await chat.sendMessage([
+      console.log("[KAI] Function call:", fnName, fnArgs);
+
+      let fnResult: string;
+      try {
+        fnResult = await executeFunction(fnName, fnArgs, userId);
+      } catch (fnErr) {
+        console.error("[KAI] Function execution error:", fnErr);
+        fnResult = JSON.stringify({ error: "An error occurred during the operation." });
+      }
+
+      result = await chat.sendMessage([
         {
           functionResponse: {
-            name,
-            response: { result: JSON.parse(result) },
+            name: fnName,
+            response: JSON.parse(fnResult),
           },
         },
       ]);
@@ -358,14 +370,25 @@ export async function POST(req: NextRequest) {
       maxIterations--;
     }
 
-    const text = response.response.text();
+    const text = result.response.text();
 
     return NextResponse.json({ reply: text });
-  } catch (err) {
-    console.error("[KAI] Error:", err);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[KAI] Error:", errMsg);
+
+    // User-friendly error messages
+    let userMessage = "Something went wrong. Please try again.";
+    if (errMsg.includes("Quota exceeded") || errMsg.includes("quota")) {
+      userMessage = "API quota limit exceeded. Please try again in a few minutes.";
+    } else if (errMsg.includes("API_KEY") || errMsg.includes("api key")) {
+      userMessage = "API key is not configured. Please contact your administrator.";
+    }
+
     return NextResponse.json(
-      { error: "Bir hata oluştu. Lütfen tekrar deneyin." },
+      { error: userMessage },
       { status: 500 },
     );
   }
 }
+
