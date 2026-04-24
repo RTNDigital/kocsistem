@@ -52,6 +52,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const starred = boards.filter((b) => b.starred);
+  const personalBoards = boards.filter((b) => b.type === "personal");
+  const projectBoards = boards.filter((b) => b.type !== "personal");
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
@@ -278,8 +280,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </NavSection>
             )}
 
-            <NavSection label="All boards">
-              {boards.map((b) => (
+            <NavSection label="Project Boards">
+              {projectBoards.map((b) => (
                 <NavItem
                   key={b.id}
                   href={`/board/${b.id}`}
@@ -289,9 +291,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   onClick={() => setMobileOpen(false)}
                 />
               ))}
-              {boards.length === 0 && (
+              {projectBoards.length === 0 && (
                 <div style={{ padding: "6px 10px", fontSize: 12, color: "var(--ink-4)" }}>
-                  No boards yet
+                  No project boards yet
+                </div>
+              )}
+            </NavSection>
+
+            <NavSection label="Personal Boards">
+              {personalBoards.map((b) => (
+                <NavItem
+                  key={b.id}
+                  href={`/board/${b.id}`}
+                  icon={<Swatch color={b.color} />}
+                  label={b.title}
+                  active={pathname === `/board/${b.id}`}
+                  onClick={() => setMobileOpen(false)}
+                />
+              ))}
+              {personalBoards.length === 0 && (
+                <div style={{ padding: "6px 10px", fontSize: 12, color: "var(--ink-4)" }}>
+                  No personal boards yet
                 </div>
               )}
             </NavSection>
