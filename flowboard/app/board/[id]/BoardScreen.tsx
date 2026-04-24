@@ -112,6 +112,7 @@ export function BoardScreen({ boardId }: { boardId: string }) {
 
   const { board, members, columns, labels } = data;
   const memberProfiles = members.map((m) => m.profile);
+  const canManageBoard = me?.is_admin || (board.type === "personal" && board.owner_id === me?.id);
 
   return (
     <AppShell>
@@ -187,7 +188,7 @@ export function BoardScreen({ boardId }: { boardId: string }) {
           <Button size="sm" variant="default" onClick={() => window.dispatchEvent(new CustomEvent("open-sprint-archive", { detail: { boardId } }))}>
             {I.archive} Archive
           </Button>
-          {me?.is_admin && (
+          {canManageBoard && (
             <>
               {!activeSprint ? (
                 <Button
@@ -378,7 +379,7 @@ export function BoardScreen({ boardId }: { boardId: string }) {
         />
       )}
 
-      {managingMembers && me?.is_admin && (
+      {managingMembers && canManageBoard && (
         <BoardMembersModal
           boardId={boardId}
           members={members.map((m) => ({ ...m.profile, role: m.role }))}
