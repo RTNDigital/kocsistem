@@ -14,8 +14,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function() {
+              try {
+                var raw = localStorage.getItem("flowboard.tweaks");
+                if (raw) {
+                  var tweaks = JSON.parse(raw);
+                  var root = document.documentElement;
+                  if (tweaks.accent) root.style.setProperty("--accent", tweaks.accent);
+                  if (tweaks.density) root.setAttribute("data-density", tweaks.density);
+                  if (tweaks.bg) root.setAttribute("data-bg", tweaks.bg);
+                }
+              } catch (e) {}
+            })();`,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

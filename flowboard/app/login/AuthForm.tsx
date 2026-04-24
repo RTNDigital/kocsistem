@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Button, Field, Input } from "@/components/ui";
 import { I, Logo } from "@/components/Icons";
 import { loginAction, signupAction, type AuthState } from "./actions";
+import { TweaksPanel } from "@/components/TweaksPanel";
 
 interface Props {
   mode: "login" | "signup";
@@ -17,6 +18,7 @@ export function AuthForm({ mode }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [tweaksOpen, setTweaksOpen] = useState(false);
 
   return (
     <div
@@ -163,11 +165,45 @@ export function AuthForm({ mode }: Props) {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 16, fontSize: 11.5, color: "var(--ink-4)" }}>
+        <div style={{ display: "flex", gap: 16, fontSize: 11.5, color: "var(--ink-4)", position: "relative", alignItems: "center" }}>
+          {tweaksOpen && <TweaksPanel onClose={() => setTweaksOpen(false)} />}
           <span className="mono">v0.1.0</span>
           <span>·</span>
           <span>Privacy</span>
           <span>Terms</span>
+          <button
+            title="Appearance"
+            type="button"
+            onClick={() => setTweaksOpen((o) => !o)}
+            style={{
+              background: tweaksOpen ? "var(--surface-2)" : "transparent",
+              border: 0,
+              padding: "6px 10px",
+              color: tweaksOpen ? "var(--ink-2)" : "var(--ink-4)",
+              cursor: "pointer",
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              flexShrink: 0,
+              marginLeft: "auto",
+              fontSize: 12,
+              fontWeight: 500,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink-2)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = tweaksOpen ? "var(--ink-2)" : "var(--ink-4)")}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" stroke="none" opacity=".15"/>
+              <circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+              <circle cx="15" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+              <circle cx="9" cy="15" r="1.5" fill="currentColor" stroke="none"/>
+              <circle cx="15" cy="15" r="1.5" fill="currentColor" stroke="none"/>
+            </svg>
+            Appearance
+          </button>
         </div>
       </div>
 

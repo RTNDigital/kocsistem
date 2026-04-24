@@ -340,15 +340,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               style={{
                 background: tweaksOpen ? "var(--surface-2)" : "transparent",
                 border: 0,
-                padding: 5,
+                padding: "6px 10px",
                 color: tweaksOpen ? "var(--ink-2)" : "var(--ink-4)",
                 cursor: "pointer",
                 borderRadius: 6,
                 display: "flex",
                 alignItems: "center",
+                gap: 6,
                 justifyContent: "center",
                 flexShrink: 0,
+                fontSize: 12,
+                fontWeight: 500,
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink-2)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = tweaksOpen ? "var(--ink-2)" : "var(--ink-4)")}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="9" />
@@ -358,6 +363,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <circle cx="9" cy="15" r="1.5" fill="currentColor" stroke="none"/>
                 <circle cx="15" cy="15" r="1.5" fill="currentColor" stroke="none"/>
               </svg>
+              Appearance
             </button>
           </div>
         </div>
