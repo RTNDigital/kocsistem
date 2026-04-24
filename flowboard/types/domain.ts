@@ -10,6 +10,7 @@ export type Label = T["labels"]["Row"];
 export type CardRow = T["cards"]["Row"];
 export type ChecklistItem = T["checklist_items"]["Row"];
 export type Comment = T["comments"]["Row"];
+export type CommentAttachment = T["comment_attachments"]["Row"];
 export type Activity = T["activities"]["Row"];
 export type Sprint = T["sprints"]["Row"];
 export type SprintArchivedCard = T["sprint_archived_cards"]["Row"];
@@ -32,7 +33,7 @@ export interface CardDetail extends CardRow {
   assignees: Profile[];
   watchers: Profile[];
   checklist: ChecklistItem[];
-  comments: (Comment & { author: Profile | null })[];
+  comments: (Comment & { author: Profile | null; attachments: CommentAttachment[] })[];
 }
 
 export interface BoardDetail {

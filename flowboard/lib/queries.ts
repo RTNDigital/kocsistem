@@ -147,7 +147,7 @@ export async function getCardDetail(cardId: string): Promise<CardDetail | null> 
   const session = await auth();
   if (!session?.user?.id) return null;
 
-  const [cardRows, labelRows, assigneeRows, watcherRows, checklistRows, commentRows] = await Promise.all([
+  const [cardRows, labelRows, assigneeRows, watcherRows, checklistRows, commentRows, attachmentRows] = await Promise.all([
     db`SELECT * FROM cards WHERE id = ${cardId}`,
     db`
       SELECT l.* FROM labels l
@@ -173,10 +173,24 @@ export async function getCardDetail(cardId: string): Promise<CardDetail | null> 
       WHERE c.card_id = ${cardId}
       ORDER BY c.created_at DESC
     `,
+    db`
+      SELECT ca.* FROM comment_attachments ca
+      JOIN comments c ON c.id = ca.comment_id
+      WHERE c.card_id = ${cardId}
+      ORDER BY ca.created_at
+    `,
   ]);
 
   if (!cardRows.length) return null;
   const card = cardRows[0];
+
+  // Group attachments by comment_id
+  const attachmentsByComment: Record<string, typeof attachmentRows[number][]> = {};
+  for (const att of attachmentRows) {
+    const cid = att.comment_id as string;
+    if (!attachmentsByComment[cid]) attachmentsByComment[cid] = [];
+    attachmentsByComment[cid].push(att);
+  }
 
   const comments = commentRows.map((c) => ({
     id: c.id as string,
@@ -193,6 +207,16 @@ export async function getCardDetail(cardId: string): Promise<CardDetail | null> 
       is_admin: false as boolean,
       created_at: c.a_created_at as string,
     },
+    attachments: (attachmentsByComment[c.id as string] ?? []).map((a) => ({
+      id: a.id as string,
+      comment_id: a.comment_id as string,
+      file_key: a.file_key as string,
+      file_name: a.file_name as string,
+      file_size: a.file_size as number,
+      mime_type: a.mime_type as string,
+      url: a.url as string,
+      created_at: a.created_at as string,
+    })),
   }));
 
   return {

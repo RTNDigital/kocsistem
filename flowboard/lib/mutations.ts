@@ -423,12 +423,36 @@ export async function addComment(args: {
   boardId: string;
   authorId?: string;
   text: string;
+  attachment?: {
+    url: string;
+    key: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+  };
 }) {
   const userId = await requireUser();
-  await db`
+  const rows = await db`
     INSERT INTO comments (card_id, author_id, text)
     VALUES (${args.cardId}, ${userId}, ${args.text})
+    RETURNING id
   `;
+  const commentId = rows[0].id as string;
+
+  if (args.attachment) {
+    await db`
+      INSERT INTO comment_attachments (comment_id, file_key, file_name, file_size, mime_type, url)
+      VALUES (
+        ${commentId},
+        ${args.attachment.key},
+        ${args.attachment.fileName},
+        ${args.attachment.fileSize},
+        ${args.attachment.mimeType},
+        ${args.attachment.url}
+      )
+    `;
+  }
+
   await db`
     INSERT INTO activities (board_id, card_id, actor_id, type, payload)
     VALUES (

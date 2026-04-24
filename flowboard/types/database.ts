@@ -214,6 +214,28 @@ export interface Database {
         };
         Update: Partial<{ text: string }>;
       };
+      comment_attachments: {
+        Row: {
+          id: string;
+          comment_id: string;
+          file_key: string;
+          file_name: string;
+          file_size: number;
+          mime_type: string;
+          url: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          comment_id: string;
+          file_key: string;
+          file_name: string;
+          file_size: number;
+          mime_type: string;
+          url: string;
+        };
+        Update: never;
+      };
       activities: {
         Row: {
           id: string;

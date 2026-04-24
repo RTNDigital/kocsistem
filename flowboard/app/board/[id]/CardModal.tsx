@@ -3,7 +3,7 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Avatar, AvatarStack, Button, Chip, InlineEdit, Menu, MenuItem, Textarea, Input } from "@/components/ui";
 import { I, Icon } from "@/components/Icons";
 import { useMe } from "@/hooks/useMe";
@@ -40,6 +40,9 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
   const [checkText, setCheckText] = useState("");
   const [activityTab, setActivityTab] = useState<"comments" | "log">("comments");
   const { data: cardLogs = [] } = useCardActivities(cardId);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -48,6 +51,13 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
     document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
   }, [onClose]);
+
+  // Cleanup file preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+    };
+  }, [filePreview]);
 
   if (isLoading || !card) {
     return (
@@ -63,11 +73,36 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
   const progress = checkTotal ? checkDone / checkTotal : 0;
   const due = dueState(card.due_at);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Validate on client side
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "image/svg+xml", "image/bmp", "image/tiff", "image/avif", "image/heic", "image/heif"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Unsupported file type. Use PNG, JPG, JPEG, WebP, GIF, SVG, BMP, TIFF, AVIF or HEIC.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File too large. Max 10MB.");
+      return;
+    }
+    setSelectedFile(file);
+    setFilePreview(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
+  const clearFile = () => {
+    if (filePreview) URL.revokeObjectURL(filePreview);
+    setSelectedFile(null);
+    setFilePreview(null);
+  };
+
   const submitComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim() || !me) return;
-    addComment.mutate({ authorId: me.id, text: comment.trim() });
+    if ((!comment.trim() && !selectedFile) || !me) return;
+    addComment.mutate({ authorId: me.id, text: comment.trim() || (selectedFile ? "📎 Image" : ""), file: selectedFile ?? undefined });
     setComment("");
+    clearFile();
   };
 
   const submitChecklist = (e: React.FormEvent) => {
@@ -380,13 +415,110 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
                         }}
                         style={{ minHeight: 60 }}
                       />
-                      {comment.trim() && (
-                        <div style={{ marginTop: 6, display: "flex", justifyContent: "flex-end" }}>
-                          <Button variant="primary" size="sm" type="submit">
-                            Send
-                          </Button>
+                      {/* File preview */}
+                      {filePreview && selectedFile && (
+                        <div style={{
+                          marginTop: 8,
+                          position: "relative",
+                          display: "inline-block",
+                          borderRadius: 8,
+                          overflow: "hidden",
+                          border: "1px solid var(--line)",
+                          background: "var(--surface-2)",
+                        }}>
+                          <img
+                            src={filePreview}
+                            alt="Preview"
+                            style={{
+                              maxWidth: 180,
+                              maxHeight: 120,
+                              display: "block",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={clearFile}
+                            style={{
+                              position: "absolute",
+                              top: 4,
+                              right: 4,
+                              width: 20,
+                              height: 20,
+                              borderRadius: "50%",
+                              background: "rgba(0,0,0,0.6)",
+                              color: "#fff",
+                              border: 0,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 12,
+                              lineHeight: 1,
+                              padding: 0,
+                            }}
+                            aria-label="Remove file"
+                          >
+                            ✕
+                          </button>
+                          <div style={{
+                            fontSize: 10,
+                            color: "var(--ink-3)",
+                            padding: "3px 6px",
+                            background: "var(--surface-2)",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: 180,
+                          }}>
+                            {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)}KB)
+                          </div>
                         </div>
                       )}
+                      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/avif,image/heic,image/heif"
+                            onChange={handleFileSelect}
+                            style={{ display: "none" }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Attach image"
+                            style={{
+                              background: "transparent",
+                              border: "1px solid var(--line)",
+                              borderRadius: 6,
+                              padding: "4px 8px",
+                              cursor: "pointer",
+                              color: selectedFile ? "var(--accent)" : "var(--ink-3)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              fontSize: 12,
+                              transition: "all .15s",
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.color = selectedFile ? "var(--accent)" : "var(--ink-3)"; }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                            {selectedFile ? "1 file" : "Attach"}
+                          </button>
+                        </div>
+                        {(comment.trim() || selectedFile) && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            type="submit"
+                            disabled={addComment.isPending}
+                          >
+                            {addComment.isPending ? "Uploading…" : "Send"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </form>
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -417,6 +549,47 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
                           >
                             {c.text}
                           </div>
+                          {/* Comment attachments */}
+                          {c.attachments && c.attachments.length > 0 && (
+                            <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                              {c.attachments.map((att) => (
+                                <a
+                                  key={att.id}
+                                  href={att.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    display: "block",
+                                    borderRadius: 8,
+                                    overflow: "hidden",
+                                    border: "1px solid var(--line)",
+                                    transition: "border-color .15s, box-shadow .15s",
+                                    maxWidth: 240,
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = "var(--accent)";
+                                    e.currentTarget.style.boxShadow = "0 0 0 2px color-mix(in oklab, var(--accent) 25%, transparent)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = "var(--line)";
+                                    e.currentTarget.style.boxShadow = "none";
+                                  }}
+                                >
+                                  <img
+                                    src={att.url}
+                                    alt={att.file_name}
+                                    style={{
+                                      maxWidth: 240,
+                                      maxHeight: 180,
+                                      display: "block",
+                                      objectFit: "cover",
+                                    }}
+                                    loading="lazy"
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -446,7 +619,7 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ fontSize: 13, color: "var(--ink-2)" }}>
-                          {describeLog(log.type as string, log.payload)}
+                          {describeLog(log.type as string, log.payload as Record<string, unknown>)}
                         </span>
                         <div style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 1 }}>
                           <span style={{ fontWeight: 600 }}>{log.actor?.name ?? "Unknown"}</span>

@@ -87,8 +87,28 @@ export function useDeleteChecklist(cardId: string, boardId: string) {
 export function useAddComment(cardId: string, boardId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ authorId, text }: { authorId?: string; text: string }) =>
-      addComment({ cardId, boardId, text }),
+    mutationFn: async ({ text, file }: { authorId?: string; text: string; file?: File }) => {
+      let attachment: {
+        url: string;
+        key: string;
+        fileName: string;
+        fileSize: number;
+        mimeType: string;
+      } | undefined;
+
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Upload failed");
+        }
+        attachment = await res.json();
+      }
+
+      return addComment({ cardId, boardId, text, attachment });
+    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["card", cardId] });
       qc.invalidateQueries({ queryKey: ["board", boardId] });
