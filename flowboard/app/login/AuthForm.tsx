@@ -40,7 +40,9 @@ export function AuthForm({ mode }: Props) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Logo />
+          <Link href="/landing" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 10 }}>
+            <Logo />
+          </Link>
         </div>
 
         <div style={{ maxWidth: 360, width: "100%", margin: "0 auto" }}>
