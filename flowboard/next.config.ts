@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  webpack(config: any, { isServer }: { isServer: boolean }) {
+    if (isServer) {
+      const existing = config.externals;
+      const asArray = Array.isArray(existing) ? existing : existing ? [existing] : [];
+      config.externals = [...asArray, /^@aws-sdk\//, /^@smithy\//];
+    }
+    return config;
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
