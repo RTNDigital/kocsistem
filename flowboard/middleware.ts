@@ -1,5 +1,8 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth.config";
 import { NextResponse } from "next/server";
+
+const { auth } = NextAuth(authConfig);
 
 const PUBLIC_PATHS = ["/login", "/signup", "/api/auth"];
 
@@ -19,8 +22,6 @@ export default auth((req) => {
     return NextResponse.redirect(url);
   }
 });
-
-export const runtime = "nodejs";
 
 export const config = {
   matcher: [
