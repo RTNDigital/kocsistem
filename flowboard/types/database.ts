@@ -10,6 +10,7 @@ export type Json =
   | Json[];
 
 export type BoardRole = "owner" | "editor" | "viewer";
+export type BoardType = "project" | "personal";
 export type CardPriority = "low" | "med" | "high";
 export type ActivityType =
   | "card_created"
@@ -63,6 +64,7 @@ export interface Database {
           color: string;
           owner_id: string;
           starred: boolean;
+          type: BoardType;
           created_at: string;
           started_at: string | null;
           estimated_finished_at: string | null;
@@ -73,10 +75,11 @@ export interface Database {
           color?: string;
           owner_id: string;
           starred?: boolean;
+          type?: BoardType;
           started_at?: string | null;
           estimated_finished_at?: string | null;
         };
-        Update: Partial<{ title: string; color: string; starred: boolean; started_at: string | null; estimated_finished_at: string | null }>;
+        Update: Partial<{ title: string; color: string; starred: boolean; type: BoardType; started_at: string | null; estimated_finished_at: string | null }>;
       };
       board_members: {
         Row: {
@@ -333,6 +336,7 @@ export interface Database {
     };
     Enums: {
       board_role: BoardRole;
+      board_type: BoardType;
       card_priority: CardPriority;
       activity_type: ActivityType;
       sprint_status: SprintStatus;

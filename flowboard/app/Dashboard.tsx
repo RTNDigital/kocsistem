@@ -15,7 +15,8 @@ export function Dashboard() {
   const createBoard = useCreateBoard();
   const toggleStar = useUpdateBoard();
   const [query, setQuery] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [addingProject, setAddingProject] = useState(false);
+  const [addingPersonal, setAddingPersonal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newStarted, setNewStarted] = useState("");
   const [newFinished, setNewFinished] = useState("");
@@ -23,16 +24,20 @@ export function Dashboard() {
   const filtered = boards.filter(
     (b) => !query || b.title.toLowerCase().includes(query.toLowerCase())
   );
-  const starred = filtered.filter((b) => b.starred);
-  const others = filtered.filter((b) => !b.starred);
 
-  const submit = (e: React.FormEvent) => {
+  const projectBoards = filtered.filter((b) => b.type === "project");
+  const personalBoards = filtered.filter((b) => b.type === "personal");
+  const starredProject = projectBoards.filter((b) => b.starred);
+  const otherProject = projectBoards.filter((b) => !b.starred);
+
+  const submitProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !me) return;
     createBoard.mutate(
       {
         title: newTitle.trim(),
         ownerId: me.id,
+        type: "project",
         started_at: newStarted || null,
         estimated_finished_at: newFinished || null,
       },
@@ -41,10 +46,32 @@ export function Dashboard() {
           setNewTitle("");
           setNewStarted("");
           setNewFinished("");
-          setAdding(false);
+          setAddingProject(false);
         },
       }
     );
+  };
+
+  const submitPersonal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !me) return;
+    createBoard.mutate(
+      { title: newTitle.trim(), ownerId: me.id, type: "personal" },
+      {
+        onSuccess: () => {
+          setNewTitle("");
+          setAddingPersonal(false);
+        },
+      }
+    );
+  };
+
+  const cancelAdding = () => {
+    setAddingProject(false);
+    setAddingPersonal(false);
+    setNewTitle("");
+    setNewStarted("");
+    setNewFinished("");
   };
 
   return (
@@ -85,8 +112,8 @@ export function Dashboard() {
               Good {greeting()}, {me?.name?.split(" ")[0] ?? "there"}.
             </h1>
             <p style={{ color: "var(--ink-3)", fontSize: 14, margin: "6px 0 0" }}>
-              {boards.length} {boards.length === 1 ? "board" : "boards"} ·{" "}
-              {starred.length} starred
+              {projectBoards.length} team {projectBoards.length === 1 ? "board" : "boards"} ·{" "}
+              {personalBoards.length} personal
             </p>
           </div>
 
@@ -110,17 +137,20 @@ export function Dashboard() {
                 style={{ paddingLeft: 32, width: 220 }}
               />
             </div>
+            <Button variant="ghost" onClick={() => { cancelAdding(); setAddingPersonal(true); }}>
+              {I.plus} My board
+            </Button>
             {me?.is_admin && (
-              <Button variant="primary" onClick={() => setAdding(true)}>
-                {I.plus} New board
+              <Button variant="primary" onClick={() => { cancelAdding(); setAddingProject(true); }}>
+                {I.plus} Team board
               </Button>
             )}
           </div>
         </header>
 
-        {adding && (
+        {addingPersonal && (
           <form
-            onSubmit={submit}
+            onSubmit={submitPersonal}
             style={{
               background: "var(--surface)",
               border: "1px solid var(--line-strong)",
@@ -133,6 +163,76 @@ export function Dashboard() {
               boxShadow: "var(--shadow-md)",
             }}
           >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "var(--ink-3)",
+                  textTransform: "uppercase",
+                  letterSpacing: ".08em",
+                }}
+              >
+                New personal board
+              </span>
+              <span
+                style={{
+                  fontSize: 10,
+                  background: "var(--surface-2)",
+                  color: "var(--ink-3)",
+                  borderRadius: 4,
+                  padding: "2px 6px",
+                  fontWeight: 500,
+                }}
+              >
+                Only visible to you
+              </span>
+            </div>
+            <Input
+              autoFocus
+              placeholder="Board title — e.g. Weekly goals"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+            />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <Button variant="primary" type="submit" disabled={createBoard.isPending}>
+                {createBoard.isPending ? "…" : "Create"}
+              </Button>
+              <Button type="button" variant="ghost" onClick={cancelAdding}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {addingProject && (
+          <form
+            onSubmit={submitProject}
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--line-strong)",
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 24,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              boxShadow: "var(--shadow-md)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "var(--ink-3)",
+                  textTransform: "uppercase",
+                  letterSpacing: ".08em",
+                }}
+              >
+                New team board
+              </span>
+            </div>
             <Input
               autoFocus
               placeholder="Board title — e.g. Q3 Roadmap"
@@ -185,16 +285,7 @@ export function Dashboard() {
                 <Button variant="primary" type="submit" disabled={createBoard.isPending}>
                   {createBoard.isPending ? "…" : "Create"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setAdding(false);
-                    setNewTitle("");
-                    setNewStarted("");
-                    setNewFinished("");
-                  }}
-                >
+                <Button type="button" variant="ghost" onClick={cancelAdding}>
                   Cancel
                 </Button>
               </div>
@@ -206,10 +297,11 @@ export function Dashboard() {
           <div style={{ color: "var(--ink-4)", fontSize: 13, padding: 24 }}>Loading…</div>
         )}
 
-        {!isLoading && starred.length > 0 && (
+        {/* Team boards */}
+        {!isLoading && starredProject.length > 0 && (
           <Section title="Starred">
             <BoardGrid
-              boards={starred}
+              boards={starredProject}
               onStar={(id, on) => toggleStar.mutate({ boardId: id, patch: { starred: on } })}
             />
           </Section>
@@ -217,13 +309,30 @@ export function Dashboard() {
 
         {!isLoading && (
           <Section
-            title={starred.length ? "All boards" : "Your boards"}
-            count={others.length}
+            title="Team boards"
+            count={otherProject.length}
           >
             <BoardGrid
-              boards={others}
+              boards={otherProject}
               onStar={(id, on) => toggleStar.mutate({ boardId: id, patch: { starred: on } })}
-              createCard={me?.is_admin ? () => setAdding(true) : undefined}
+              onAdd={me?.is_admin ? () => { cancelAdding(); setAddingProject(true); } : undefined}
+              addLabel="New team board"
+            />
+          </Section>
+        )}
+
+        {/* Personal boards */}
+        {!isLoading && (
+          <Section
+            title="My boards"
+            count={personalBoards.length}
+            badge="Personal"
+          >
+            <BoardGrid
+              boards={personalBoards}
+              onStar={(id, on) => toggleStar.mutate({ boardId: id, patch: { starred: on } })}
+              onAdd={() => { cancelAdding(); setAddingPersonal(true); }}
+              addLabel="New personal board"
             />
           </Section>
         )}
@@ -239,10 +348,12 @@ export function Dashboard() {
 function Section({
   title,
   count,
+  badge,
   children,
 }: {
   title: string;
   count?: number;
+  badge?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -265,6 +376,20 @@ function Section({
             {count}
           </span>
         )}
+        {badge && (
+          <span
+            style={{
+              fontSize: 10,
+              background: "var(--surface-2)",
+              color: "var(--ink-3)",
+              borderRadius: 4,
+              padding: "1px 6px",
+              fontWeight: 500,
+            }}
+          >
+            {badge}
+          </span>
+        )}
         <div style={{ height: 1, background: "var(--line)", flex: 1 }} />
       </div>
       {children}
@@ -275,11 +400,13 @@ function Section({
 function BoardGrid({
   boards,
   onStar,
-  createCard,
+  onAdd,
+  addLabel,
 }: {
   boards: { id: string; title: string; color: string; starred: boolean }[];
   onStar: (id: string, on: boolean) => void;
-  createCard?: () => void;
+  onAdd?: () => void;
+  addLabel?: string;
 }) {
   return (
     <div
@@ -350,9 +477,9 @@ function BoardGrid({
         </Link>
       ))}
 
-      {createCard && (
+      {onAdd && (
         <button
-          onClick={createCard}
+          onClick={onAdd}
           style={{
             background: "transparent",
             border: "2px dashed var(--line-strong)",
@@ -382,7 +509,7 @@ function BoardGrid({
           >
             {I.plus}
           </span>
-          <span>New board</span>
+          <span>{addLabel ?? "New board"}</span>
         </button>
       )}
     </div>

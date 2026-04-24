@@ -1,4 +1,4 @@
-import type { Database, BoardRole, CardPriority, SprintStatus } from "./database";
+import type { Database, BoardRole, BoardType, CardPriority, SprintStatus } from "./database";
 
 type T = Database["public"]["Tables"];
 
@@ -15,7 +15,7 @@ export type Activity = T["activities"]["Row"];
 export type Sprint = T["sprints"]["Row"];
 export type SprintArchivedCard = T["sprint_archived_cards"]["Row"];
 
-export type { BoardRole, CardPriority, SprintStatus };
+export type { BoardRole, BoardType, CardPriority, SprintStatus };
 
 // Hydrated card with its joined collections
 export interface Card extends CardRow {

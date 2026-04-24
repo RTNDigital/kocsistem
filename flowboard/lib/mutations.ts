@@ -3,7 +3,7 @@
 import { auth } from "./auth";
 import { db } from "./db";
 import { positionAtEnd, positionForIndex } from "./ordering";
-import type { CardPriority } from "@/types/database";
+import type { CardPriority, BoardType } from "@/types/database";
 
 async function requireUser() {
   const session = await auth();
@@ -25,15 +25,17 @@ export async function createBoard(args: {
   title: string;
   ownerId?: string;
   color?: string;
+  type?: BoardType;
   started_at?: string | null;
   estimated_finished_at?: string | null;
 }): Promise<string> {
-  const userId = await requireAdmin();
+  const boardType = args.type ?? "project";
+  const userId = boardType === "personal" ? await requireUser() : await requireAdmin();
   const color = args.color ?? "#5B5BF5";
 
   const rows = await db`
-    INSERT INTO boards (title, owner_id, color, started_at, estimated_finished_at)
-    VALUES (${args.title}, ${userId}, ${color}, ${args.started_at ?? null}, ${args.estimated_finished_at ?? null})
+    INSERT INTO boards (title, owner_id, color, type, started_at, estimated_finished_at)
+    VALUES (${args.title}, ${userId}, ${color}, ${boardType}, ${args.started_at ?? null}, ${args.estimated_finished_at ?? null})
     RETURNING id
   `;
   const boardId = rows[0].id as string;
@@ -70,7 +72,16 @@ export async function updateBoard(
 }
 
 export async function deleteBoard(boardId: string) {
-  await requireAdmin();
+  const userId = await requireUser();
+  const [boardRows, profileRows] = await Promise.all([
+    db`SELECT owner_id, type FROM boards WHERE id = ${boardId}`,
+    db`SELECT is_admin FROM profiles WHERE id = ${userId}`,
+  ]);
+  if (!boardRows.length) return;
+  const board = boardRows[0];
+  const isAdmin = profileRows[0]?.is_admin ?? false;
+  const isPersonalOwner = board.type === "personal" && board.owner_id === userId;
+  if (!isAdmin && !isPersonalOwner) throw new Error("Bu board'u silme yetkiniz yok");
   await db`DELETE FROM boards WHERE id = ${boardId}`;
 }
 

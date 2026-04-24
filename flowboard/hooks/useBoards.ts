@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { listBoards, recentActivity, listAllProfiles } from "@/lib/queries";
 import { createBoard, updateBoard, deleteBoard, addBoardMember, removeBoardMember } from "@/lib/mutations";
-import type { Board } from "@/types/domain";
+import type { Board, BoardType } from "@/types/domain";
 
 export function useBoards() {
   return useQuery({
@@ -26,7 +26,7 @@ export function useRecentActivity(limit = 8) {
 export function useCreateBoard() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (args: { title: string; ownerId?: string; color?: string; started_at?: string | null; estimated_finished_at?: string | null }) =>
+    mutationFn: (args: { title: string; ownerId?: string; color?: string; type?: BoardType; started_at?: string | null; estimated_finished_at?: string | null }) =>
       createBoard(args),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["boards"] });
