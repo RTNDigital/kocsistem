@@ -44,6 +44,7 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -584,11 +585,10 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
                           {c.attachments && c.attachments.length > 0 && (
                             <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
                               {c.attachments.map((att) => (
-                                <a
+                                <button
                                   key={att.id}
-                                  href={att.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                  type="button"
+                                  onClick={() => setLightboxUrl(att.url)}
                                   style={{
                                     display: "block",
                                     borderRadius: 8,
@@ -596,6 +596,9 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
                                     border: "1px solid var(--line)",
                                     transition: "border-color .15s, box-shadow .15s",
                                     maxWidth: 240,
+                                    padding: 0,
+                                    background: "var(--surface-2)",
+                                    cursor: "pointer",
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.borderColor = "var(--accent)";
@@ -616,8 +619,30 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
                                       objectFit: "cover",
                                     }}
                                     loading="lazy"
+                                    onError={(e) => {
+                                      const target = e.currentTarget;
+                                      target.style.display = "none";
+                                      const fallback = target.nextElementSibling as HTMLElement;
+                                      if (fallback) fallback.style.display = "flex";
+                                    }}
                                   />
-                                </a>
+                                  <div
+                                    style={{
+                                      display: "none",
+                                      width: 240,
+                                      height: 80,
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      gap: 6,
+                                      color: "var(--ink-3)",
+                                      fontSize: 12,
+                                      background: "var(--surface-2)",
+                                    }}
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    {att.file_name}
+                                  </div>
+                                </button>
                               ))}
                             </div>
                           )}
@@ -952,7 +977,80 @@ export function CardModal({ cardId, boardId, boardMembers, allLabels, columns, o
           margin: 0.5em 0;
         }
       `}</style>
+
+      {/* Image Lightbox */}
+      {lightboxUrl && (
+        <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      )}
     </Backdrop>
+  );
+}
+
+function ImageLightbox({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); onClose(); }
+    };
+    document.addEventListener("keydown", h, true);
+    return () => document.removeEventListener("keydown", h, true);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(6px)",
+        zIndex: 300,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "zoom-out",
+        padding: 32,
+      }}
+    >
+      <button
+        onClick={onClose}
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          background: "rgba(255,255,255,0.15)",
+          border: 0,
+          color: "#fff",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 18,
+          fontWeight: 300,
+          transition: "background .15s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.3)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; }}
+        aria-label="Close preview"
+      >
+        ✕
+      </button>
+      <img
+        src={url}
+        alt="Preview"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: "90vw",
+          maxHeight: "85vh",
+          borderRadius: 10,
+          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          objectFit: "contain",
+          cursor: "default",
+        }}
+      />
+    </div>
   );
 }
 
