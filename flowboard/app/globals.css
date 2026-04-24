@@ -32,6 +32,7 @@
   --col-gap: 14px;
   --card-pad: 12px;
   --card-gap: 8px;
+  --col-width: 280px;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
@@ -160,6 +161,7 @@ a { color: inherit; text-decoration: none; }
     --col-gap: 10px;
     --card-pad: 11px;
     --card-gap: 7px;
+    --col-width: 260px;
   }
 }
 
@@ -522,6 +524,29 @@ a { color: inherit; text-decoration: none; }
   }
   .filter-bar::-webkit-scrollbar { height: 0; }
   .filter-bar .filter-divider { display: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Kanban Board — mobile drag & scroll                                 */
+/* ------------------------------------------------------------------ */
+.kanban-board-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 720px) {
+  .kanban-board-inner {
+    padding: 12px 10px 80px !important;
+    scroll-snap-type: x proximity;
+  }
+  .kanban-column {
+    scroll-snap-align: start;
+    max-height: calc(100svh - 230px) !important;
+  }
+  /* Hover effects have no meaning on touch — suppress them */
+  .kanban-add-card:hover {
+    background: transparent !important;
+  }
 }
 
 /* ------------------------------------------------------------------ */

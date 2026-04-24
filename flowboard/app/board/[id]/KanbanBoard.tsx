@@ -196,8 +196,9 @@ export function KanbanBoard({
   }, [columns, cards, cardsByColumn, findCard, moveCard, moveColumn, actorId]);
 
   return (
-    <div style={{ flex: 1, overflowX: "auto", overflowY: "hidden" }}>
+    <div className="kanban-board-scroll" style={{ flex: 1, overflowX: "auto", overflowY: "hidden" }}>
       <div
+        className="kanban-board-inner"
         style={{
           display: "flex",
           gap: "var(--col-gap)",
@@ -339,8 +340,9 @@ function ColumnView({
   return (
     <div
       ref={colRef}
+      className="kanban-column"
       style={{
-        width: 280,
+        width: "var(--col-width)",
         flexShrink: 0,
         background: "var(--surface-2)",
         borderRadius: 12,
@@ -498,6 +500,7 @@ function ColumnView({
         ) : (
           <button
             onClick={() => setAdding(true)}
+            className="kanban-add-card"
             style={{
               background: "transparent",
               border: 0,
@@ -573,7 +576,7 @@ function DraggableCard({
   }, [card.id, card.column_id]);
 
   return (
-    <div ref={ref} style={{ position: "relative" }}>
+    <div ref={ref} style={{ position: "relative", touchAction: "none" }}>
       <CardTile
         card={card}
         labels={labels}
@@ -607,7 +610,7 @@ function AddColumn({ onAdd }: { onAdd: (title: string) => void }) {
       <button
         onClick={() => setAdding(true)}
         style={{
-          width: 280,
+          width: "var(--col-width)",
           flexShrink: 0,
           background: "transparent",
           border: "2px dashed var(--line-strong)",
@@ -630,7 +633,7 @@ function AddColumn({ onAdd }: { onAdd: (title: string) => void }) {
     <form
       onSubmit={submit}
       style={{
-        width: 280,
+        width: "var(--col-width)",
         flexShrink: 0,
         background: "var(--surface)",
         border: "1px solid var(--line-strong)",

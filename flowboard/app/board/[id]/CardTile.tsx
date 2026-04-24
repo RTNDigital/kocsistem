@@ -31,8 +31,9 @@ export function CardTile({ card, labels, users, onOpen, isDragging }: Props) {
   return (
     <div
       onPointerUp={(e) => {
-        if ((e as React.PointerEvent).defaultPrevented) return;
-        if (!isDragging) onOpen();
+        if (e.defaultPrevented) return;
+        if (isDragging) return;
+        onOpen();
       }}
       style={{
         background: "var(--surface)",
@@ -44,7 +45,7 @@ export function CardTile({ card, labels, users, onOpen, isDragging }: Props) {
         boxShadow: "var(--shadow-sm)",
         transition: "border-color .12s, box-shadow .12s",
         opacity: isDragging ? 0.35 : 1,
-        touchAction: "manipulation",
+        touchAction: "none",
       }}
       onMouseEnter={(e) => {
         if (isDragging) return;
