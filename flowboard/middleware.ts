@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_PATHS = ["/login", "/signup", "/api/auth"];
+const PUBLIC_PATHS = ["/landing", "/login", "/signup", "/api/auth"];
 
 export default auth((req) => {
   const { nextUrl } = req;
@@ -13,7 +13,7 @@ export default auth((req) => {
 
   if (!session && !isPublic) {
     const url = nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/landing";
     return NextResponse.redirect(url);
   }
   if (session && (nextUrl.pathname === "/login" || nextUrl.pathname === "/signup")) {
