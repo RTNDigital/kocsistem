@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // "standalone" output is only for Docker/Coolify — Vercel doesn't support it
+  ...(process.env.STANDALONE === "true" ? { output: "standalone" as const } : {}),
   reactStrictMode: true,
   experimental: {
     typedRoutes: true,
