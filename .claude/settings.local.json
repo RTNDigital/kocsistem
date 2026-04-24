@@ -10,7 +10,10 @@
       "mcp__supabase__execute_sql",
       "mcp__Neon__run_sql_transaction",
       "PowerShell(cd \"c:\\\\Users\\\\deniz\\\\Desktop\\\\kocsistem\\\\flowboard\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -match \"BoardListView\" })",
-      "PowerShell(cd \"c:\\\\Users\\\\deniz\\\\Desktop\\\\kocsistem\\\\flowboard\"; npx tsc --noEmit 2>&1 | Out-String | Select-String \"BoardListView\" -AllMatches | ForEach-Object { $_.Matches } | Select-Object -ExpandProperty Value)"
+      "PowerShell(cd \"c:\\\\Users\\\\deniz\\\\Desktop\\\\kocsistem\\\\flowboard\"; npx tsc --noEmit 2>&1 | Out-String | Select-String \"BoardListView\" -AllMatches | ForEach-Object { $_.Matches } | Select-Object -ExpandProperty Value)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   },
   "enableAllProjectMcpServers": true,
