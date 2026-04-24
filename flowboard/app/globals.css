@@ -208,3 +208,262 @@ a { color: inherit; text-decoration: none; }
   .auth-grid { grid-template-columns: 1fr !important; }
   .auth-aside { display: none !important; }
 }
+
+/* ------------------------------------------------------------------ */
+/* KAI Chatbot Panel                                                   */
+/* ------------------------------------------------------------------ */
+.kai-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .25);
+  z-index: 200;
+  animation: kaiFadeIn .18s ease;
+}
+
+.kai-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  max-width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  z-index: 210;
+  transform: translateX(100%);
+  transition: transform .22s cubic-bezier(.4, 0, .2, 1);
+  box-shadow: -8px 0 40px -12px rgba(0, 0, 0, .15);
+}
+
+.kai-panel-open {
+  transform: translateX(0);
+}
+
+.kai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.kai-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5B5BF5 0%, #9B59F5 50%, #C04BF5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(91, 91, 245, .3);
+}
+
+.kai-avatar-text {
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.kai-close {
+  background: transparent;
+  border: 0;
+  color: var(--ink-4);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s, color .12s;
+}
+.kai-close:hover {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.kai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kai-msg {
+  display: flex;
+  gap: 8px;
+  max-width: 92%;
+  animation: kaiMsgIn .22s ease;
+}
+
+.kai-msg-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.kai-msg-bot {
+  align-self: flex-start;
+}
+
+.kai-msg-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #5B5BF5, #9B59F5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.kai-msg-bubble {
+  border-radius: 14px;
+  padding: 10px 14px;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.kai-msg-bubble-user {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-bottom-right-radius: 4px;
+}
+
+.kai-msg-bubble-bot {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+.kai-msg-text {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.kai-msg-text strong {
+  font-weight: 650;
+}
+
+.kai-msg-text code {
+  font-family: var(--font-mono);
+}
+
+.kai-msg-time {
+  font-size: 10px;
+  opacity: .5;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Typing indicator */
+.kai-typing {
+  display: flex;
+  gap: 4px;
+  padding: 4px 2px;
+  align-items: center;
+}
+
+.kai-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  animation: kaiBounce 1.2s ease-in-out infinite;
+}
+.kai-typing span:nth-child(2) { animation-delay: .15s; }
+.kai-typing span:nth-child(3) { animation-delay: .3s; }
+
+/* Input area */
+.kai-input-area {
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.kai-input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+
+.kai-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 16%, transparent);
+}
+
+.kai-input::placeholder {
+  color: var(--ink-4);
+}
+
+.kai-send {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity .12s, transform .12s;
+}
+.kai-send:hover:not(:disabled) {
+  opacity: .9;
+  transform: scale(1.04);
+}
+.kai-send:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes kaiFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes kaiMsgIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kaiBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-5px); }
+}
+
+/* Mobile: full screen */
+@media (max-width: 720px) {
+  .kai-panel {
+    width: 100vw;
+  }
+}

@@ -11,6 +11,7 @@ import { logoutAction } from "@/app/login/actions";
 import { useQueryClient } from "@tanstack/react-query";
 import { TweaksPanel } from "./TweaksPanel";
 import { SprintArchiveModal } from "@/app/board/[id]/SprintArchiveModal";
+import { KaiChat } from "./KaiChat";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: me } = useMe();
@@ -19,6 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tweaksOpen, setTweaksOpen] = useState(false);
   const [archiveBoardId, setArchiveBoardId] = useState<string | null>(null);
+  const [kaiOpen, setKaiOpen] = useState(false);
 
   // Extract boardId when on a board page
   const boardIdMatch = pathname.match(/^\/board\/([\w-]+)/);
@@ -208,6 +210,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileOpen(false)}
             />
 
+            <NavButton
+              icon={I.kai}
+              label="KAI Asistan"
+              onClick={() => {
+                setMobileOpen(false);
+                setKaiOpen(true);
+              }}
+            />
+
             {!currentBoardId ? (
               <Menu
                 align="start"
@@ -359,6 +370,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {archiveBoardId && (
         <SprintArchiveModal boardId={archiveBoardId} onClose={() => setArchiveBoardId(null)} />
       )}
+
+      <KaiChat open={kaiOpen} onClose={() => setKaiOpen(false)} />
     </div>
   );
 }
