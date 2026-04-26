@@ -517,8 +517,68 @@ function BoardGrid({
   );
 }
 
+const ACTIVITY_CATEGORIES = [
+  {
+    key: "board",
+    label: "Board",
+    icon: I.grid,
+    color: "#7c6ef5",
+    types: new Set(["board_created"]),
+  },
+  {
+    key: "card",
+    label: "Kartlar",
+    icon: I.list,
+    color: "#3b82f6",
+    types: new Set([
+      "card_created", "card_moved", "card_completed", "card_deleted",
+      "card_title_changed", "card_description_changed", "card_priority_changed",
+      "card_due_changed", "card_start_changed",
+    ]),
+  },
+  {
+    key: "comment",
+    label: "Yorumlar",
+    icon: I.msg,
+    color: "#10b981",
+    types: new Set(["card_commented"]),
+  },
+  {
+    key: "checklist",
+    label: "Checklist",
+    icon: I.check,
+    color: "#f59e0b",
+    types: new Set([
+      "card_checklist_added", "card_checklist_done",
+      "card_checklist_undone", "card_checklist_deleted",
+    ]),
+  },
+  {
+    key: "label",
+    label: "Etiketler",
+    icon: I.flag,
+    color: "#ec4899",
+    types: new Set(["card_label_added", "card_label_removed"]),
+  },
+  {
+    key: "member",
+    label: "Üyeler",
+    icon: I.users,
+    color: "#06b6d4",
+    types: new Set(["card_assignee_added", "card_assignee_removed"]),
+  },
+] as const;
+
+function getActivityCategory(type: string) {
+  for (const cat of ACTIVITY_CATEGORIES) {
+    if ((cat.types as ReadonlySet<string>).has(type)) return cat.key;
+  }
+  return "card";
+}
+
 function ActivityFeed() {
-  const { data: items = [], isLoading } = useRecentActivity(8);
+  const { data: items = [], isLoading } = useRecentActivity(30);
+
   if (isLoading) return <div style={{ color: "var(--ink-4)" }}>Loading…</div>;
   if (items.length === 0) {
     return (
@@ -537,36 +597,81 @@ function ActivityFeed() {
       </div>
     );
   }
+
+  const groups: Record<string, typeof items> = {};
+  for (const item of items) {
+    const key = getActivityCategory(item.type);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  }
+
+  const activeCategories = ACTIVITY_CATEGORIES.filter((c) => groups[c.key]?.length);
+
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--line)",
-        borderRadius: 12,
-        overflow: "hidden",
-      }}
-    >
-      {items.map((it, i) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {activeCategories.map((cat) => (
         <div
-          key={it.id}
+          key={cat.key}
           style={{
-            display: "flex",
-            gap: 12,
-            padding: "13px 16px",
-            borderTop: i ? "1px solid var(--line)" : "none",
-            alignItems: "center",
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: 12,
+            overflow: "hidden",
           }}
         >
-          {it.actor && <Avatar user={it.actor} size={28} />}
-          <div style={{ flex: 1, fontSize: 13, color: "var(--ink-2)" }}>
-            <b style={{ color: "var(--ink)", fontWeight: 600 }}>
-              {it.actor?.name ?? "Someone"}
-            </b>{" "}
-            {describeActivity(it.type)}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "9px 14px",
+              borderBottom: "1px solid var(--line)",
+              background: "color-mix(in oklab, var(--surface) 92%, var(--line))",
+            }}
+          >
+            <span style={{ color: cat.color, display: "flex", alignItems: "center" }}>
+              {cat.icon}
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-2)", letterSpacing: "0.02em" }}>
+              {cat.label}
+            </span>
+            <span
+              style={{
+                marginLeft: "auto",
+                fontSize: 11,
+                background: "var(--line)",
+                borderRadius: 20,
+                padding: "1px 8px",
+                color: "var(--ink-3)",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {groups[cat.key].length}
+            </span>
           </div>
-          <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)" }}>
-            {relativeTime(it.created_at)}
-          </span>
+          {groups[cat.key].map((it, i) => (
+            <div
+              key={it.id}
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: "11px 14px",
+                borderTop: i ? "1px solid var(--line)" : "none",
+                alignItems: "center",
+              }}
+            >
+              {it.actor && <Avatar user={it.actor} size={26} />}
+              <div style={{ flex: 1, fontSize: 13, color: "var(--ink-2)" }}>
+                <b style={{ color: "var(--ink)", fontWeight: 600 }}>
+                  {it.actor?.name ?? "Someone"}
+                </b>{" "}
+                {describeActivity(it.type)}
+              </div>
+              <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)" }}>
+                {relativeTime(it.created_at)}
+              </span>
+            </div>
+          ))}
         </div>
       ))}
     </div>
@@ -575,17 +680,25 @@ function ActivityFeed() {
 
 function describeActivity(type: string) {
   switch (type) {
-    case "board_created":
-      return "created a new board";
-    case "card_created":
-      return "added a card";
-    case "card_moved":
-      return "moved a card";
-    case "card_completed":
-      return "completed a card";
-    case "card_commented":
-      return "commented on a card";
-    default:
-      return "did something";
+    case "board_created":            return "created a new board";
+    case "card_created":             return "added a card";
+    case "card_moved":               return "moved a card";
+    case "card_completed":           return "completed a card";
+    case "card_deleted":             return "deleted a card";
+    case "card_commented":           return "commented on a card";
+    case "card_title_changed":       return "changed a card title";
+    case "card_description_changed": return "updated a card description";
+    case "card_priority_changed":    return "changed a card priority";
+    case "card_due_changed":         return "updated the due date";
+    case "card_start_changed":       return "updated the start date";
+    case "card_label_added":         return "added a label";
+    case "card_label_removed":       return "removed a label";
+    case "card_assignee_added":      return "assigned a member";
+    case "card_assignee_removed":    return "unassigned a member";
+    case "card_checklist_added":     return "added a checklist item";
+    case "card_checklist_done":      return "completed a checklist item";
+    case "card_checklist_undone":    return "unchecked a checklist item";
+    case "card_checklist_deleted":   return "deleted a checklist item";
+    default:                         return "performed an action";
   }
 }
