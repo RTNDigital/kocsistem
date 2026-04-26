@@ -85,12 +85,24 @@ export async function deleteBoard(boardId: string) {
   await db`DELETE FROM boards WHERE id = ${boardId}`;
 }
 
+async function requireBoardManager(boardId: string) {
+  const userId = await requireUser();
+  const [profileRows, boardRows] = await Promise.all([
+    db`SELECT is_admin FROM profiles WHERE id = ${userId} LIMIT 1`,
+    db`SELECT owner_id, type FROM boards WHERE id = ${boardId} LIMIT 1`,
+  ]);
+  const isAdmin = profileRows[0]?.is_admin ?? false;
+  const isPersonalOwner = boardRows[0]?.type === "personal" && boardRows[0]?.owner_id === userId;
+  if (!isAdmin && !isPersonalOwner) throw new Error("Bu işlem için yetkiniz yok");
+  return userId;
+}
+
 export async function addBoardMember(args: {
   boardId: string;
   userId: string;
   role?: "editor" | "viewer";
 }) {
-  await requireAdmin();
+  await requireBoardManager(args.boardId);
   await db`
     INSERT INTO board_members (board_id, user_id, role)
     VALUES (${args.boardId}, ${args.userId}, ${args.role ?? "editor"})
@@ -99,8 +111,8 @@ export async function addBoardMember(args: {
 }
 
 export async function removeBoardMember(args: { boardId: string; userId: string }) {
-  const adminId = await requireAdmin();
-  if (args.userId === adminId) throw new Error("Kendinizi boarddan çıkaramazsınız");
+  const callerId = await requireBoardManager(args.boardId);
+  if (args.userId === callerId) throw new Error("Kendinizi boarddan çıkaramazsınız");
   await db`
     DELETE FROM board_members
     WHERE board_id = ${args.boardId} AND user_id = ${args.userId} AND role != 'owner'
@@ -523,7 +535,7 @@ export async function startSprint(args: {
   title: string;
   goal?: string;
 }): Promise<string> {
-  await requireAdmin();
+  await requireBoardManager(args.boardId);
 
   // Check no active sprint exists
   const existing = await db`
