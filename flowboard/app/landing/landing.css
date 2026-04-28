@@ -447,6 +447,8 @@
   .kocban-landing .stk3 { left: 12%; top: 140px; width: 180px; }
   .kocban-landing .stk4 { right: 2%; top: 185px; }
   .kocban-landing .stk5 { left: 0; top: 220px; width: 165px; }
+  .kocban-landing .hero-play-btn { width: 100px !important; height: 100px !important; bottom: -20% !important; right: 4% !important; font-size: 11px !important; gap: 2px !important; box-shadow: 3px 3px 0 var(--ink, #2A1F14) !important; }
+  .kocban-landing .hero-play-btn svg { width: 22px; height: 22px; }
 }
 
 /* Scrolly: fix mobile layout — hide sticky panel, remove excess padding */
