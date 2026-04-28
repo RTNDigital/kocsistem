@@ -447,8 +447,8 @@
   .kocban-landing .stk3 { left: 12%; top: 140px; width: 180px; }
   .kocban-landing .stk4 { right: 2%; top: 185px; }
   .kocban-landing .stk5 { left: 0; top: 220px; width: 165px; }
-  .kocban-landing .hero-play-btn { width: 86px !important; height: 86px !important; top: auto !important; bottom: -110px !important; right: 8px !important; font-size: 10px !important; gap: 2px !important; box-shadow: 3px 3px 0 var(--ink, #2A1F14) !important; }
-  .kocban-landing .hero-play-btn svg { width: 18px; height: 18px; }
+  .kocban-landing .hero-play-btn { position: fixed !important; width: 76px !important; height: 76px !important; top: auto !important; left: auto !important; bottom: 16px !important; right: 16px !important; font-size: 9.5px !important; gap: 2px !important; box-shadow: 3px 3px 0 var(--ink, #2A1F14) !important; z-index: 1000 !important; }
+  .kocban-landing .hero-play-btn svg { width: 16px; height: 16px; }
 }
 
 /* Scrolly: fix mobile layout — hide sticky panel, remove excess padding */
