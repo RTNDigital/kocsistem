@@ -25,6 +25,7 @@ import type { Card, Column, Label, Profile } from "@/types/domain";
 import { Button, Input, InlineEdit, Menu, MenuItem, Textarea, Chip } from "@/components/ui";
 import { I } from "@/components/Icons";
 import { CardTile } from "./CardTile";
+import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
 
 // ---------------------------------------------------------------------------
 // DnD data types
@@ -195,8 +196,11 @@ export function KanbanBoard({
     });
   }, [columns, cards, cardsByColumn, findCard, moveCard, moveColumn, actorId]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useDragAutoScroll(scrollRef, "horizontal");
+
   return (
-    <div className="kanban-board-scroll" style={{ flex: 1, overflowX: "auto", overflowY: "hidden" }}>
+    <div ref={scrollRef} className="kanban-board-scroll" style={{ flex: 1, overflowX: "auto", overflowY: "hidden" }}>
       <div
         className="kanban-board-inner"
         style={{

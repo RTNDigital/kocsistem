@@ -19,6 +19,7 @@ import {
 import { getReorderDestinationIndex } from "@atlaskit/pragmatic-drag-and-drop-hitbox/util/get-reorder-destination-index";
 import { DropIndicator } from "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box";
 import { useMoveCard } from "@/hooks/useBoard";
+import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
 
 type GroupBy = "status" | "priority";
 
@@ -282,6 +283,9 @@ export function BoardListView({ boardId, cards, columns, labels, users, actorId,
     });
   }, [cards, moveCard, actorId]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useDragAutoScroll(scrollRef, "vertical");
+
   if (cards.length === 0) {
     return (
       <div style={{
@@ -296,7 +300,7 @@ export function BoardListView({ boardId, cards, columns, labels, users, actorId,
   }
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 60px" }}>
+    <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "0 20px 60px" }}>
       {/* Group-by selector */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 4px 4px" }}>
         <span style={{ fontSize: 11.5, color: "var(--ink-3)" }}>Group by</span>
