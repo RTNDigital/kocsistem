@@ -20,6 +20,7 @@ import { getReorderDestinationIndex } from "@atlaskit/pragmatic-drag-and-drop-hi
 import { DropIndicator } from "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box";
 import { useMoveCard } from "@/hooks/useBoard";
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
+import { renderReactDragPreview } from "@/lib/dragPreview";
 
 type GroupBy = "status" | "priority";
 
@@ -72,6 +73,50 @@ function ListCardRow({ card, col, cardLabels, assigneeProfiles, groupBy, onOpenC
         element: el,
         getInitialData: () =>
           rec<ListDragData>({ type: "list-card", cardId: card.id, columnId: card.column_id }),
+        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+          renderReactDragPreview({
+            nativeSetDragImage,
+            render: () => (
+              <div
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--line-strong)",
+                  borderRadius: 8,
+                  boxShadow: "var(--shadow-md)",
+                  padding: "8px 12px",
+                  fontSize: 13.5,
+                  fontWeight: 500,
+                  color: "var(--ink)",
+                  maxWidth: 320,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  transform: "rotate(1.5deg)",
+                  pointerEvents: "none",
+                }}
+              >
+                {(card.priority === "high" || card.priority === "med" || card.priority === "low") && (
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background:
+                        card.priority === "high" ? "var(--err)" :
+                        card.priority === "med"  ? "var(--warn)" :
+                        "var(--ok)",
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{card.title}</span>
+              </div>
+            ),
+          });
+        },
         onDragStart: () => setIsDragging(true),
         onDrop: () => setIsDragging(false),
       }),

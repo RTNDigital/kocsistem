@@ -26,6 +26,7 @@ import { Button, Input, InlineEdit, Menu, MenuItem, Textarea, Chip } from "@/com
 import { I } from "@/components/Icons";
 import { CardTile } from "./CardTile";
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
+import { renderReactDragPreview } from "@/lib/dragPreview";
 
 // ---------------------------------------------------------------------------
 // DnD data types
@@ -557,6 +558,16 @@ function DraggableCard({
         element: el,
         getInitialData: () =>
           rec({ type: "card" as const, cardId: card.id, columnId: card.column_id }),
+        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+          renderReactDragPreview({
+            nativeSetDragImage,
+            render: () => (
+              <div style={{ width: "var(--col-width, 280px)", transform: "rotate(2deg)", pointerEvents: "none" }}>
+                <CardTile card={card} labels={labels} users={users} onOpen={() => {}} />
+              </div>
+            ),
+          });
+        },
         onDragStart: () => setIsDragging(true),
         onDrop: () => setIsDragging(false),
       }),
