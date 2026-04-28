@@ -286,6 +286,37 @@ function ColumnView({
         element: colEl,
         dragHandle: hdrEl,
         getInitialData: () => rec({ type: "column" as const, colId: col.id }),
+        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+          renderReactDragPreview({
+            nativeSetDragImage,
+            render: () => (
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 12px",
+                  background: "var(--surface)",
+                  border: "1px solid var(--line-strong)",
+                  borderRadius: 10,
+                  boxShadow: "var(--shadow-md)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  transform: "rotate(-2deg)",
+                  pointerEvents: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{ display: "inline-flex", color: "var(--ink-3)" }}>{I.drag}</span>
+                <span>{col.title}</span>
+                <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)" }}>
+                  {cards.length}
+                </span>
+              </div>
+            ),
+          });
+        },
         onDragStart: () => setIsDragging(true),
         onDrop: () => setIsDragging(false),
       }),
@@ -326,7 +357,7 @@ function ColumnView({
         onDrop: () => { setIsCardOver(false); setColEdge(null); },
       })
     );
-  }, [col.id]);
+  }, [col.id, col.title, cards.length]);
 
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
