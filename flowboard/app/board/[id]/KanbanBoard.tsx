@@ -27,6 +27,7 @@ import { I } from "@/components/Icons";
 import { CardTile } from "./CardTile";
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
 import { renderReactDragPreview } from "@/lib/dragPreview";
+import { triggerPostMoveFlash } from "@atlaskit/pragmatic-drag-and-drop-flourish/trigger-post-move-flash";
 
 // ---------------------------------------------------------------------------
 // DnD data types
@@ -59,6 +60,15 @@ function isColData(d: DragData | null): d is Extract<DragData, { type: "column" 
 }
 function isColDropData(d: DragData | null): d is Extract<DragData, { type: "column-drop" }> {
   return d?.type === "column-drop";
+}
+
+function flashAfterMove(selector: string) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const el = document.querySelector(selector);
+      if (el instanceof HTMLElement) triggerPostMoveFlash(el);
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -146,6 +156,7 @@ export function KanbanBoard({
             axis: "horizontal",
           });
           moveColumn.mutate({ colId: src.colId, toIndex: destIdx });
+          flashAfterMove(`[data-column-id="${src.colId}"]`);
           return;
         }
 
@@ -179,6 +190,7 @@ export function KanbanBoard({
             toIndex = edge === "bottom" ? targetIdx + 1 : targetIdx;
           }
           moveCard.mutate({ cardId: src.cardId, toColumnId, toIndex, actorId });
+          flashAfterMove(`[data-card-id="${src.cardId}"]`);
           return;
         }
 
@@ -192,6 +204,7 @@ export function KanbanBoard({
           const colEdge = extractClosestEdge(rawColDropTarget.data);
           const toIndex = colEdge === "top" ? 0 : list.length;
           moveCard.mutate({ cardId: src.cardId, toColumnId, toIndex, actorId });
+          flashAfterMove(`[data-card-id="${src.cardId}"]`);
         }
       },
     });
@@ -376,6 +389,7 @@ function ColumnView({
   return (
     <div
       ref={colRef}
+      data-column-id={col.id}
       className="kanban-column"
       style={{
         width: "var(--col-width)",
@@ -622,7 +636,7 @@ function DraggableCard({
   }, [card.id, card.column_id]);
 
   return (
-    <div ref={ref} style={{ position: "relative", touchAction: "none" }}>
+    <div ref={ref} data-card-id={card.id} style={{ position: "relative", touchAction: "none" }}>
       <CardTile
         card={card}
         labels={labels}

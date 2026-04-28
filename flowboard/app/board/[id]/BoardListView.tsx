@@ -21,6 +21,7 @@ import { DropIndicator } from "@atlaskit/pragmatic-drag-and-drop-react-drop-indi
 import { useMoveCard } from "@/hooks/useBoard";
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
 import { renderReactDragPreview } from "@/lib/dragPreview";
+import { triggerPostMoveFlash } from "@atlaskit/pragmatic-drag-and-drop-flourish/trigger-post-move-flash";
 
 type GroupBy = "status" | "priority";
 
@@ -148,6 +149,7 @@ function ListCardRow({ card, col, cardLabels, assigneeProfiles, groupBy, onOpenC
   return (
     <div
       ref={ref}
+      data-list-card-id={card.id}
       style={{ position: "relative", opacity: isDragging ? 0.4 : 1 }}
     >
       <button
@@ -323,6 +325,13 @@ export function BoardListView({ boardId, cards, columns, labels, users, actorId,
           actorId,
           fromColumnId: movedCard.column_id,
           siblingsExcludingMoved,
+        });
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const el = document.querySelector(`[data-list-card-id="${src.cardId}"]`);
+            if (el instanceof HTMLElement) triggerPostMoveFlash(el);
+          });
         });
       },
     });
