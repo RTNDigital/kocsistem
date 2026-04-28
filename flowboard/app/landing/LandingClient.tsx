@@ -28,11 +28,14 @@ const kaiMsgs: Record<Lang, { who: "bot" | "user"; text: string }[]> = {
   ],
 };
 
+const YOUTUBE_VIDEO_ID = "PnndamBT0aI"; // TODO: kendi video ID'nle değiştir
+
 export default function LandingClient() {
   const [lang, setLang] = useState<Lang>("tr");
   const [activeStep, setActiveStep] = useState(1);
   const [kaiIdx, setKaiIdx] = useState(0);
   const [showTop, setShowTop] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const stepsRef = useRef<HTMLDivElement>(null);
 
   const t = (tr: string, en: string) => (lang === "tr" ? tr : en);
@@ -63,6 +66,19 @@ export default function LandingClient() {
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // ESC closes video modal & lock body scroll
+  useEffect(() => {
+    if (!showVideo) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowVideo(false); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [showVideo]);
 
   // KAI chat loop
   useEffect(() => {
@@ -136,7 +152,7 @@ export default function LandingClient() {
 
             </div>
 
-            <div className="hero-stage" aria-hidden="true">
+            <div className="hero-stage">
               <div className="hero-sticker">
                 {lang === "tr" ? <>mini ekip,<br />büyük enerji</> : <>tiny team,<br />big energy</>}
               </div>
@@ -172,6 +188,52 @@ export default function LandingClient() {
                 <div>{t("Doktor profili Bio", "Doctor profile bio")}</div>
                 <div className="meta"><span className="av" style={{ background: "var(--sky)" }}>DB</span> · APR 25</div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowVideo(true)}
+                aria-label={t("Sunumu izle", "Watch the demo")}
+                className="hero-play-btn"
+                style={{
+                  position: "absolute",
+                  right: "2%",
+                  bottom: "-40%",
+                  width: 160,
+                  height: 160,
+                  borderRadius: "50%",
+                  background: "var(--accent, #E8833A)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  boxShadow: "5px 5px 0 var(--ink, #2A1F14)",
+                  fontFamily: "var(--heading-font, inherit)",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  lineHeight: 1.15,
+                  textAlign: "center",
+                  letterSpacing: 0.2,
+                  transition: "transform .18s ease, box-shadow .18s ease",
+                  zIndex: 5,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translate(-2px, -2px) rotate(-3deg)";
+                  e.currentTarget.style.boxShadow = "7px 7px 0 var(--ink, #2A1F14)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "";
+                  e.currentTarget.style.boxShadow = "5px 5px 0 var(--ink, #2A1F14)";
+                }}
+              >
+                <svg width="30" height="30" viewBox="0 0 22 22" fill="currentColor" aria-hidden="true">
+                  <path d="M6 3.5v15l13-7.5z" />
+                </svg>
+                <span>{t("sunumu izle", "watch demo")}</span>
+              </button>
             </div>
           </div>
 
@@ -215,7 +277,7 @@ export default function LandingClient() {
           <div className="feat-grid">
             <div className="feat big">
               <div className="chip"><span className="ic">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="3.5" height="10" rx="1" stroke="#2A1F14" strokeWidth="1.2"/><rect x="5.5" y="2" width="3.5" height="7" rx="1" stroke="#2A1F14" strokeWidth="1.2"/><rect x="10" y="2" width="3" height="5" rx="1" stroke="#2A1F14" strokeWidth="1.2"/></svg>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="3.5" height="10" rx="1" stroke="#2A1F14" strokeWidth="1.2" /><rect x="5.5" y="2" width="3.5" height="7" rx="1" stroke="#2A1F14" strokeWidth="1.2" /><rect x="10" y="2" width="3" height="5" rx="1" stroke="#2A1F14" strokeWidth="1.2" /></svg>
               </span>Kanban</div>
               <h3>{t("Sürükle, bırak, bitti.", "Drag, drop, done.")}</h3>
               <p>{t(
@@ -248,7 +310,7 @@ export default function LandingClient() {
 
             <div className="feat sm">
               <div className="chip"><span className="ic">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="1" y1="4" x2="13" y2="4" stroke="#2A1F14" strokeWidth="1.2"/><line x1="1" y1="8" x2="13" y2="8" stroke="#2A1F14" strokeWidth="1.2"/><circle cx="5" cy="4" r="1.5" fill="#E8833A"/><circle cx="9" cy="8" r="1.5" fill="#6E5BE8"/></svg>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="1" y1="4" x2="13" y2="4" stroke="#2A1F14" strokeWidth="1.2" /><line x1="1" y1="8" x2="13" y2="8" stroke="#2A1F14" strokeWidth="1.2" /><circle cx="5" cy="4" r="1.5" fill="#E8833A" /><circle cx="9" cy="8" r="1.5" fill="#6E5BE8" /></svg>
               </span>Timeline</div>
               <h3>{t("Aylara yayılan plan.", "A plan you can stretch.")}</h3>
               <p>{t(
@@ -265,7 +327,7 @@ export default function LandingClient() {
 
             <div className="feat med">
               <div className="chip"><span className="ic">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="4" y1="3" x2="13" y2="3" stroke="#2A1F14" strokeWidth="1.2"/><line x1="4" y1="7" x2="13" y2="7" stroke="#2A1F14" strokeWidth="1.2"/><line x1="4" y1="11" x2="13" y2="11" stroke="#2A1F14" strokeWidth="1.2"/><circle cx="1.5" cy="3" r="1" fill="#2A1F14"/><circle cx="1.5" cy="7" r="1" fill="#2A1F14"/><circle cx="1.5" cy="11" r="1" fill="#2A1F14"/></svg>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="4" y1="3" x2="13" y2="3" stroke="#2A1F14" strokeWidth="1.2" /><line x1="4" y1="7" x2="13" y2="7" stroke="#2A1F14" strokeWidth="1.2" /><line x1="4" y1="11" x2="13" y2="11" stroke="#2A1F14" strokeWidth="1.2" /><circle cx="1.5" cy="3" r="1" fill="#2A1F14" /><circle cx="1.5" cy="7" r="1" fill="#2A1F14" /><circle cx="1.5" cy="11" r="1" fill="#2A1F14" /></svg>
               </span>List view</div>
               <h3>{t("Her şey tek bakışta.", "Everything at one glance.")}</h3>
               <p>{t(
@@ -276,7 +338,7 @@ export default function LandingClient() {
 
             <div className="feat third">
               <div className="chip"><span className="ic">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 12h8M4 12V6M7 12V3M10 12V8" stroke="#2A1F14" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 12h8M4 12V6M7 12V3M10 12V8" stroke="#2A1F14" strokeWidth="1.2" strokeLinecap="round" /></svg>
               </span>Leaderboard</div>
               <h3>{t("Tatlı rekabet.", "Gentle competition.")}</h3>
               <p>{t(
@@ -292,7 +354,7 @@ export default function LandingClient() {
 
             <div className="feat third">
               <div className="chip"><span className="ic">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="3" rx="1" stroke="#2A1F14" strokeWidth="1.2"/><rect x="2.5" y="5.5" width="9" height="6" rx="1" stroke="#2A1F14" strokeWidth="1.2"/><line x1="5.5" y1="8" x2="8.5" y2="8" stroke="#2A1F14" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="3" rx="1" stroke="#2A1F14" strokeWidth="1.2" /><rect x="2.5" y="5.5" width="9" height="6" rx="1" stroke="#2A1F14" strokeWidth="1.2" /><line x1="5.5" y1="8" x2="8.5" y2="8" stroke="#2A1F14" strokeWidth="1.2" strokeLinecap="round" /></svg>
               </span>{t("Sprint Arşivi", "Sprint Archive")}</div>
               <h3>{t("Geçmiş her zaman elinde.", "The past, always nearby.")}</h3>
               <p>{t(
@@ -303,7 +365,7 @@ export default function LandingClient() {
 
             <div className="feat third">
               <div className="chip"><span className="ic">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#6E5BE8" strokeWidth="1.2"/><circle cx="5.5" cy="6" r=".8" fill="#6E5BE8"/><circle cx="8.5" cy="6" r=".8" fill="#6E5BE8"/><path d="M5 9c.6.6 3.4.6 4 0" stroke="#6E5BE8" strokeWidth="1.2" strokeLinecap="round" fill="none"/></svg>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#6E5BE8" strokeWidth="1.2" /><circle cx="5.5" cy="6" r=".8" fill="#6E5BE8" /><circle cx="8.5" cy="6" r=".8" fill="#6E5BE8" /><path d="M5 9c.6.6 3.4.6 4 0" stroke="#6E5BE8" strokeWidth="1.2" strokeLinecap="round" fill="none" /></svg>
               </span>KAI Assistant</div>
               <h3>{t("Yanında duran AI.", "An AI that stays close.")}</h3>
               <p>{t(
@@ -408,7 +470,7 @@ export default function LandingClient() {
               <div className="kai-chat-input">
                 <input placeholder={t("KAI'ye bir şey sor…", "Ask KAI something…")} readOnly />
                 <button aria-label="Send">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </button>
               </div>
             </div>
@@ -609,6 +671,75 @@ export default function LandingClient() {
           </div>
         </div>
       </footer>
+      {/* VIDEO MODAL */}
+      {showVideo && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("Sunum videosu", "Demo video")}
+          onClick={() => setShowVideo(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(20, 14, 8, 0.78)",
+            backdropFilter: "blur(6px)",
+            zIndex: 300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "clamp(16px, 4vw, 48px)",
+            animation: "fadeIn .2s ease",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: 1100,
+              aspectRatio: "16 / 9",
+              background: "#000",
+              borderRadius: 14,
+              overflow: "hidden",
+              boxShadow: "0 30px 80px rgba(0,0,0,.5), 6px 6px 0 var(--accent, #E8833A)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowVideo(false)}
+              aria-label={t("Kapat", "Close")}
+              style={{
+                position: "absolute",
+                top: -14,
+                right: -14,
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "var(--ink, #2A1F14)",
+                color: "var(--paper, #FFF8EC)",
+                border: "2px solid var(--paper, #FFF8EC)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+            <iframe
+              src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`}
+              title={t("Sunum videosu", "Demo video")}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              style={{ width: "100%", height: "100%", border: 0, display: "block" }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Scroll to top */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -636,7 +767,7 @@ export default function LandingClient() {
         }}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
     </div>
